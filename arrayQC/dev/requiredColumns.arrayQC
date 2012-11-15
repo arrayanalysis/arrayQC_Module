@@ -1,0 +1,30 @@
+## requiredColumns.arrayQC
+#
+# This file contains for specific arrayQC functions information about the (minimum) required columns
+# for a function to work. Optional columns are denoted between <<>>
+# The setup is set as follows:
+# [FUNCTION]\t[REQUIRED VARIABLE NAME 1] [REQUIRED VARIABLE NAME 2] <<OPTIONAL VARIABLE NAME 1>>
+# 
+# WARNING!! Do not alter any information present in this file, since this may break your current
+# arrayQC session!
+1	2	3	4	5	6	7	8	9	10	11	12	13	14	15
+ReadFiles	annotation$ControlType
+makeLimmaCompatible	
+removeManualFlaggedSpots		
+boxplotOverview1color	
+boxplotOverview2color	
+CreateBoxPlot	
+CreateDensityPlots	
+CreateHeatMap	
+CreateMAplots	
+CreatePCAplot	
+CreateSummaryPlots	
+HierarchCluster	
+imageplot3by2Adp	
+naZeroWeights	
+PlotDensities	
+annotation	[[GeneName]]	[[FeatureNum]]	Row	Col	ProbeName
+green	G	Gb
+red	R	Rb
+both	G	Gb	R	Rb
+

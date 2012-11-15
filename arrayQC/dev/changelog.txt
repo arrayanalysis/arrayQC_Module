@@ -1,0 +1,374 @@
+## v1.2.4:
+# 13-11-2012 Stan:
+# - Renamed normalized objects to MA[[<normalization method>]].
+# - Adjusted many functions (read: removed excess repetition of code)
+# - softwarepackage variable renamed to dataformat
+# - run_arraQC_2.R created, development version of last adjustments.
+# -- Made use of lists for storing normalized data objects
+#    RG
+#    - Raw$R/G      Red / Green foreground
+#    - Raw$RBg/GBg  Red / Green background
+#    - Summary
+## v1.2.3:
+# 08-08-2012 Stan:
+# - Minor bugfix in makeLimmaCompatible (replaced RG$source with x$source)
+# 26-07-2012 Stan:
+# - Various:
+#    -- Removed image.orientation variable, since it is no longer needed for the image3by2Adp() function
+#    -- Renamed 'descriptionFile' variable and functions to 'columnHeaderFile' and updated the 'run_arrayQC.R' script.
+#    -- Updated how QualityControl() is triggered. For 'agilent' and 'genepix' format this function will run normally, 
+#       for 'generic' the user is asked to run this function by hand.
+#    -- Added warning in arrayQC.R that if a memory allocation error occurs, users should increase their memory with
+#       memory.limit()
+# - ReadFiles()  
+#    -- Added functionality that checks if the column names that the user provided in the columHeader file are present 
+#       in the first 100 lines. If a column name does not exist, it will pass an additional check to see if the column 
+#       is a required column for arrayQC. If not required, the script will go on. If required, the script will halt.
+#       (--> .checkColumns() )
+#    -- Created .NAcheck() to check for full NA rows in a data object. This fixed an existing issue with the 'generic' 
+#       format where non-existing data was also checked (and resulted in an error).
+# - checkColumns()
+#    -- updated from 25-04-2012
+#    -- stored in requiredColumns.R (new script)
+#    -- will check a file (requiredColumns.arrayQC) if a value is present or not. If the value is present, then it's 
+#       a required column for arrayQC to work.
+#    -- This should only be checked for 'fes' and 'genepix' values. For 'generic' formats only the foreground and background
+#       signals are necessary.
+# - CreateSummaryPlots()
+#    -- Now checks if both RG$summary and RG$datatype are present before it proceeds.
+#    -- Altered the way how mean, median, min and max rows were removed from the data object. More flexible now to additions.
+#    -- Checks now if a QC field is present in the summary field, if not, no image of that particular QC field will be
+#       generated.
+#       
+## v1.2.2
+# 11-05-2012 Stan: - fixed issue with image3by2Adp dimensions. 
+#                    Also adjusted settings for images where [height] > 3*[width]
+# 25-04-2012 Stan: - imageplot3by2Adp: 
+#                  -- dimensions of the output image are now calculated based on the 
+#                     dimensions of the data object. This information is retrieved from the RG$printer layout!
+#                     [[WARNING]] NEED TO KEEP AN EYE ON THIS IF IT REALLY WORKS, ESPECIALLY BLOCKED ARRAYS!
+#                  -- Screen displays used 'name' to inform which plot has been generated.
+#                  - Implemented progress bars for the following functions:
+#                  -- imageplot3by2Adp
+#                  -- CreateMAplots
+#                  - Added requiredColumns.arrayQC and requiredColumns.R
+##
+## v1.2.1
+# 11-04-2012 Stan: - Bugfix in makeLimmaCompatible. If no rows are missing, object will be returned unaltered.
+# 14-12-2011 Stan: - Bugfixes related to 'generic' format (descriptionFile NULL handling)
+#                  -- ReadFiles incorrectly selected the rows for highest matches (imagene format).
+#                     increased maxLines to read from 50 to 100.
+#
+# 01-12-2011 Stan: - Some additional bugfixes in ReadFiles regarding block handling.
+# 30-11-2011 Stan: - minor bugfixes for .readFiles() and generateDescriptionFile(). 
+#                  - Implemented the "Block" parameter into default arrayQC description files.
+#                  - Added global variables 'number.of.blocks', 'nblock.row' and 'nblock.col' for block support.
+#                  - If Blocks-column is missing from RG, it will be added now.
+# 28-11-2011 Stan: arrayQC now obtains information about array column headers from a file (previously: scripted in).
+#                  For "fes" and "genepix" these files are generated on the fly and interpreted. For "generic"
+#                  a file is created and the user can fill this in. 
+#                  spot for 'default' packages. For generic microarrays, an empty file is created and must
+#                  be filled in by the user.
+# 28-11-2011 Stan: Added global variable "image.orientation"
+#                  - Has an effect in the orientation of imageplots (pre-implementation)
+##
+# 28-07-2011 Stan: Fixed issue in ReadFiles where blocks were defined as either 48 (4x12) or none. Switch-
+#                  function now also checks for 36 blocks (3x12).
+#                  Added miRNA-specific script. Main difference for FES: no description column, currently
+#                  this column is identical to the GeneName annotation field!
+# 25-01-2011 Stan: Fixed minor bug in ReadFiles (column name checks). ReadLines() sometimes adds
+#                  a \"<entry>\", which didn't allow us to find exact column name matches. This
+#                  \" will now be removed prior to applying the check (ReadFiles.R)
+# 21-12-2010 Stan: Adjusted column name checking. By default, the first 50 lines of the first
+#                  file in the description file will be read and screened for a maximum number
+#                  overlapping column names. If this number is incorrect, then an error will
+#                  be generated displaying the missing/non-matching column names.
+#                  Also, a full list of usable column names is provided, so the user can check
+#                  this.
+# 13-12-2010 Stan: "generic" format now uses a description file which the user has to fill in 
+#                  before arrayQC can continue. If this file is NOT present, then it will be 
+#                  automatically generated. If the file IS present, it will be parsed for the 
+#                  minimum required columns. Still need to finalize the required column checks.
+#                  [ReadFiles.R / run_arrayQC.R]
+#                  Temporary question: Do we need to adjust each function, so it checks which
+#                  columns are available. IF columns are missing, that specific QC will not be
+#                  executed? Is this worthwile to invest time in?
+# 13-12-2010 Stan: Prepared description file usage for "genepix" and "fes" format. At the 
+#                  current time this is not (yet) implemented [ReadFiles.R / run_arrayQC.R]
+# 13-12-2010 Stan: Created 2 new dataformat files: "description_fes_format.arrayQC" and 
+#                  "description_genepix_format.arrayQC", both located in the arrayQC/dataformat 
+#                  directory. WHen this system goes live, it is then required to have one of
+#                  these files in your data directory before arrayQC can proceed (i.e. through 
+#                  a download). The assumption is that when arrayQC is used, either a full 
+#                  local copy (i.e. through SVN) or an internet connection is available.
+# 13-12-2010 Stan: Limma made changes in read.maimages in the usage of the channels parameter. 
+#                  In the newer releases this has been changed to 'green.only'. At the current 
+#                  time, the script will look up the version of R and act accordingly, although
+#                  it would be a better idea when this was done on the limma version.                
+# 09-11-2010 Lars: Adapted ReadFiles to correctly verify whether all column headers given, do exist in the data files [ReadFiles.R]
+# 08-11-2010 Lars: Some minor changes to functions in QC.R to adapt to generic data types
+# 27-10-2010 Stan: Added some additional functions to support future 'generic' format [run_arrayQC.R / ReadFiles.R]
+# 27-10-2010 Stan: Moved CheckFile() n to ReadFiles.R [run_arrayQC.R]
+# 27-10-2010 Stan: Small textual updates in [run_ArrayQC.R]
+# 27-10-2010 Stan: Fixed non-existant variable to match existing variable while generating new featurenumbers [ReadFiles.R]
+# 22-10-2010 Lars: adapted all functions to incorporate the EListRaw data type for one-channel data sets (instead of RGList)
+# 22-10-2010 Lars: adapted colorlegend for imageplot3by2Adp function for binary and QCField types [CreateQCPlots.R]]
+# 21-10-2010 Lars: adapted CreateSummaryPlots function to also plot number of manually flagged spots [CreateQCPlots.R]
+# 19-10-2010 Lars: added overview of manually flagged spots to summary [QC.R]
+# 18-10-2010 Lars: improve speed of makeLimmaCompatible function [ReadFiles.R]
+# 18-10-2010 Lars: added some functions to fix bugs in the EListRaw class, and load those from main script
+#                  [run_arrayQC.R / functions.EListRaw.R]
+# 18-10-2010 Lars: only save backup if save.backup parameter is set to TRUE [ReadFiles.R]
+# 18-10-2010 Lars: call to controlStatus adapted to also work for EListRaw datatype [ReadFiles.R]
+# 18-10-2010 Lars: temporary fix: determine number of channels, and adjust channels parameter of read.maimages accordingly
+#                  [ReadFiles.R]
+# 11-10-2010 Stan: Added colorbars to imageplots. (Alpha phase) [CreateQCPlots.R]
+#                  Adjusted scripts to search and load the 'shape' library [CreateQCPlots.R / install_arrayQC_packages.R]
+#                  Modified run_arrayQC.R in preparation for the "generic" addition:
+#                  - Argument checks are in place
+#                  - Variable content changes based on the values of these arguments
+# 29-09-2010 Lars: Added CreatePCAplot function
+# 16-09-2010 Stan: Fixed bug in CreateDensities() which crashed the automated script when
+#                  plotting only one array in the image. [CreateQCPlots.R]
+#                  Adjusted line width in DensityPlots to better distinguish the lighter
+#                  colors; legend now no longer shows blocks, but the appropriate lines.
+#                  [CreateQCPlots.R]
+# 19-08-2010 Stan: SaveData: removed usage of quotes in write.table (quote=FALSE) [QC.R]
+# 22-07-2010 Stan: Changed workdir variable (default output dir: <datadir>/qualityControl/)
+# 22-07-2010 Stan: Ensured that run_arrayQC.R was run from the SVN server
+# 20-07-2010 Stan: Updated checks of "description" file. If default file "description.txt" is not present, 
+#                  the user has a possibility to type in the correct filename. If this file is not present, 
+#                  then arrayQC fails to start up. Future plans are to implement this in the ReadFiles 
+#                  function [run_arrayQC.R]
+# 20-07-2010 Stan: Updated vignette: description.txt file MUSt be present for arrayQC to continue
+# 20-07-2010 Stan: Added "install_arrayQC_libraries.R" script; also updated vignette
+# 10-06-2010 Stan: Corrected referral to data.path (was datapath) [ReadFiles.R]
+# 10-05-2010 Stan: Added filecheck for description.file and spottypes.file [ReadFiles.R]
+# 10-05-2010 Stan: Fixed some minor bugs for Agilent FES 10.7.1 software output (full) [ReadFiles.R]
+# 13-04-2010 Stan: workdirectory bug resolved (unable to read target file) [ReadFiles.R]
+# 13-04-2010 Stan: Added status information during automated runs [run_arrayQC.R]
+# 13-04-2010 Stan: Added missing accolades to if/else statement [run_arrayQC.R]
+# 01-04-2010 Lars: adapted user vignette to split of main script
+# 01-04-2010 Lars: split main script into initialisation and run part
+# 29-03-2010 Lars: fixed small bug in imageplot3by2Adp function, gridded arrays are now plotted correctly
+# 24-03-2010 Lars: added option to provide block layout; also added code to estimate this automatically if 
+#                  not provided
+# 24-03-2010 Lars: changed order of few items in ReadFiles
+# 24-03-2010 Lars: spelled normalise -> normalize to correspond to US English in paper
+# 24-03-2010 Lars: adapted readFiles to scan for row containing column headers automatically
+# 23-03-2010 Lars: fixed some bugs in ReadFiles function
+# 23-03-2010 Lars: adapted ReadFiles function to check for existance of columns that need to be loaded
+# 22-03-2010 Lars: changed order of few items in ReadFiles to fix some bugs
+# 21-03-2010 Lars: added description of SaveData function the the user vignette
+# 21-03-2010 Lars: unflagged code for SaveData in ArayQC main script
+# 21-03-2010 Lars: fixed small error in SaveData function when checking status of save.QC and detailed.QC
+# 21-03-2010 Lars: SaveData function tested for one channel matrix objects and adjusted where needed
+# 21-03-2010 Lars: SaveData function tested for one channel MAList objects and adjusted where needed
+# 21-03-2010 Lars: changed $EST field to $other$EST field throughout code (to make subselections work); 
+#                  also adapted vignette accordingly
+# 20-03-2010 Lars: final version of SaveData funtion added; also testes for two channel dataset 
+#                  (to be done for one channel)
+# 18-03-2010 Lars: added (preliminary version) of SaveData function, has to be tested and extended
+# 17-03-2010 Lars: adapted way to handle manual flags: do NOT use flags when not provided useAsManualFlags 
+#                  values
+# 16-03-2010 Lars: adaptation of controltype handling in case of missing column
+# 12-03-2010 Lars: several style changes, and removed non-used code
+# 11-03-2010 Lars: fixes y limits in summaryplot
+# 17-12-2009 Lars: for genepix arrays, the flags column is NOT read by default when no manual flags are given 
+#                  (as the genepix software already puts values)
+# 17-12-2009 Lars: a backup copy of the data set is stored to disk directly after reading in the files 
+#                  (readfiles.R and main script)
+# 17-12-2009 Lars: imageplot will also be made for weights by default (not hashed out in main script)
+# 02-11-2009 Stan: adapted calling of CreateMAplot, correct objects for each 'type' of dataset now called.
+# 02-11-2009 Stan: moved CreateSummary up (before normalisation instead of after)
+# 02-11-2009 Stan: changed use.description parameter by default on TRUE
+# 02-11-2009 Stan: fixed small bug in Line 161 --> End "," --> ")"
+# 29-10-2009 Lars: fixed small bug in CreateMAplots
+# 29-10-2009 Lars: fixed small bug in removeManualFlaggedSpots
+# 18-10-2009 Lars: added hashed out code to main script to call imageplot3by2Adp for QC fields if present, 
+#                  and for weight fields if present
+# 18-10-2009 Lars: adapted imageplot3by2Adp function to detect QC fields (meaning with 0,-3,-5,-8 values 
+#                  (apart from only 0 for every array, these wel be considered binary)
+# 16-10-2009 Lars: adapted CreateBoxplot function's use.color parameter to use.col, to be consistent with
+#                  the boxplot overview functions
+# 16-10-2009 Lars: adapted boxplot overview functions and main script to slightly change use of fileName 
+#                  parameter (exclude .png from value to be provided) and capitalise the N
+# 16-10-2009 Lars: adapted the main script to changes in the interface and/or name of several functions
+# 16-10-2009 Lars: some changes to the boxplot overview functions
+# 16-10-2009 Lars: some changes to the naZeroWeights function
+# 16-10-2009 Lars: adapted the boxplot overview functions to be non-specific as to which of the 4 data 
+#                  objects are provided (as long as > 2) and some other adaptations
+# 16-10-2009 Lars: renamed the zero.weight parameter of the boxplot overview functions to non.zero.weight
+# 16-10-2009 Lars: renamed the BoxplotPNG function to CreateBoxplot, renamed its zero.weight parameter to non.zero.weight
+# 15-10-2009 Lars: renamed CalculateSummary to AddSummary to be more consistent with returning complete RG object
+# 15-10-2009 Lars: extensive adaptations to PlotDensities to handle all data objects instead of only RGLists
+# 15-10-2009 Lars: adapted CreateDensityPlots to check for correct input class type, and provide a label describing the input
+# 15-10-2009 Lars: changed CreateDensityPlots and PlotDensities function to not pass data source, but get it from the object (plus adapted main script)
+# 14-10-2009 Lars: completely restructured CreateMAplots function and main script accordingly
+# 13-10-2009 Lars: adapted CalculateSummary to return complete object instead of just summary, adapted main script accordingly
+# 13-10-2009 Lars: adapted QualityControl function to set weights.analysis to all NA values
+# 13-10-2009 Lars: in main script renamed weights.HQ to weights.analysis
+# 13-10-2009 Lars: adapted main script to automatically call QualityControl correctly depending on data type and source
+# 13-10-2009 Lars: adapted QualityControl function to fix criteria.norm and criteria for one-colour arrays if needed
+# 12-10-2009 Lars: changed ReadFiles to improve manualFlags, and some other small changes
+# 12-10-2009 Lars: changed main script to automatically set columns based on one or two colour; and some other small changes
+# 09-10-2009 Lars: adapted cutoff selection for mean/media ratio in non-fes data
+# 09-10-2009 Lars: reshuffled main script a bit
+# 09-10-2009 Lars: restructured imageplot3by2 code to make function more general; also some small changes made; small bug fixed
+# 08-10-2009 Lars: adapted imageplot3by2 function: parameter which.column (confusing name) renamed to which.field
+# 08-10-2009 Lars: adapted imageplot3by2 function to read printer info automatically, and removed parameter; also adapted main script accordingly
+# 08-10-2009 Lars: adapted imageplot3by2 function to prevent red titles of all arrays in certain cases (TO BE CHECKED)
+# 08-10-2009 Lars: adapted main script for use of manual flags, user has to indicate on top of the file which manual flags are used if any
+#            based on this the flags are used in readfiles, and the function removeManualFlaggedSpots is used if flags are not NULL
+# 08-10-2009 Lars: adapted boxplotoverview functions to not use names as labels
+# 08-10-2009 Lars: adapted label sizes in clustering plots and boxplots for large data sets (>100 arrays)
+# 07-10-2009 Lars: adapted readfiles to incorporate custom manual flag values and for genepix NOT flag standard values (-50,-100); also added removeManualFlaggedSpots function
+# 02-10-2009 Lars: also reset summary field in QualityControl function
+# 02-10-2009 Lars: some small changes to summaryplots
+# 02-10-2009 Stan: Minor adjustments to main script: 3rd plot = MA.LOESS.SCALED.W, 4th plot = MA.LOESS.QUANTILE.W by default
+# 02-10-2009 Stan: This was changed in: CreateMAplots() and boxplotOverview2color()
+# 02-10-2009 Stan: Set default value of use.description to TRUE (ReadFiles)
+# 28-09-2009 Lars: adapted summaryplots small update in y limits (use 10% of range instead of 10% of max value)
+# 28-09-2009 Lars: adapted summaryplots function to only use green or red for one color arrays
+# 28-09-2009 Lars: adapted summaryplots function to not draw bars outside of limits, to include extra room for legend, to color red/green or blueish depending on column
+# 28-09-2009 Lars: adapted summaryplots function to have (0,100) range for percentages; to properly combine columns; to include legend
+# 25-09-2009 Lars: adapted summaryplots function to group information (basic fix)
+# 25-09-2009 Lars: small adaptation in createsummary (no "Est." in header for genepix)
+# 25-09-2009 Lars: small bug fix in ReadFiles
+# 24-09-2009 Lars: adapted limits in imageplot3by2Adp to be set to complete range in case of binary input files (0,1)
+# 24-09-2009 Lars: readfiles: addes check to verify existence of all files before starting to read
+# 21-09-2009 Lars: adapted boxplotoverview functions to check for two / one color input
+# 21-09-2009 Lars: adapted ReadFiles function to properly set names of $genes and $other and exclude NULL options
+# 18-09-2009 Lars: adapted main script to use correct weights for normalisation
+# 18-09-2009 Lars: adapted CreateMAPlots to use dynamic x and y limits, based on the range of all data points in all objects to be plotted
+# 18-09-2009 Lars: adapted readfiles to allow for giving alternative sample names (through targets$Description)
+# 18-09-2009 Lars: adapted readfiles to be not case sensitive on column names of target files
+# 16-09-2009 Lars: fixed small bug in CreateMAplots function
+# 15-09-2009 Lars: adapted Agilent_Analysis_Paper.R to mathc with changes in all functions, and to adapt one color data plotting
+# 15-09-2009 Lars: created boxplotOverview1color function
+# 15-09-2009 Lars: further adapted plotting functions, including boxplotPNG, naZeroWeights, boxplotOverview2color (called boxplotOverview before) functions
+# 14-09-2009 Lars: adapted imageplot3by2Adp, CreateHeatMap, CreateDensityPlots, PlotDensities functions
+# 09-09-2009  Stan: CreateSummaryPlots() - Mean/Median/Min/Max columns are not plotted.
+# 09-09-2009  Stan:                      - Fixed ylim values
+# 08-09-2009 Lars: adapted CreateSummaryPlots function to plot mean as a dashed line, and leave out columns for overall statistics
+# 08-09-2009 Lars: adapted CreateSummaryPlots function to work with one and two color data, and with any number of quality criteria selected
+# 08-09-2009 Lars: changed small bug in makeLimmaCompatible
+# 27-08-2009 Stan: MakeLimmaCompatible: Row- and column numbers are now correctly displayed for AGILENT-FE-DELETED datapoints.
+# 24-08-2009 Stan: CreateSummary - Removed the [-] brackets from the column names.
+# 24-08-2009 Stan: Added few ifelse(softwarepackage=="fes")-statements (ReadFiles, PlotDensity)
+# 24-08-2009 Stan: Removed GenePix columns with NULL attribute before GenePix data was read.
+# 24-08-2009 Stan: imageplot3by2Adp of normalized M and A value also generated. (Default: MA.LOESS.W)
+# 24-08-2009  Stan: CreateSummaryPlots() - Filenames are now checked for spaces, converted to "_".
+# 24-08-2009  Stan: CreateMAPlot() - Fixed subtext bug
+# 24-08-2009  Stan: HierarchCluster() - object x will be clustered, user decides on what they want to cluster!
+# 24-08-2009                          - renamed methods2 and method2, so users can choose their own distance and clustering algorithms.
+# 21-08-2009 Lars: Createsummary: restructured function and adapted to work with one-color data
+# 21-08-2009 Lars: CreateSummary: corrected computation of number of control to also work for GenePix data
+# 21-08-2009 Lars: fixed small error in CreateWeights function to correctly take into account manualFlags
+# 21-08-2009 Lars: adapted MakeLimmaCompatible function to only run when data is FES data
+# 18-08-2009 Stan: added softwarepackage-parameter ("fes"/"genepix") to start initiate output-specific variables/images.
+# 18-08-2009 Stan: fixed everything in such a way that this script is now compatible with Agilent FES output! Note to developers: ONLY SAVE GLOBAL CHANGES IN THIS FILE! 
+# 18-08-2009 Stan: workdir will now be automatically created if it does not exist (v1.07)
+# 11-08-2009 Lars: adapted QualityControl and QCFields to work with one color data (note: CreateWeights has to be checked/adapted still
+# 11-08-2009 Lars: adapted checks in ReadFiles for later QC checks possible to work with one color data and check NumPix
+# 11-08-2009 Lars: added check on targets file in ReadFiles
+# 10-08-2009 Lars: adapted MakeLimmaCompatible to work with one color data
+# 10-08-2009 Lars: adapted MakeLimmaCompatible to check which columns are really there
+# 10-08-2009 Lars: adapted ReadFiles to be able to read and process one color data
+# 10-08-2009 Lars: ReadFiles adapated to check for presence of channels (correctness and one or two colour)
+# 16-07-2009 Maarten: Various adaptations to make GenePix supported (see accompanying Word docx for details)
+# 15-07-2009 ReadFiles and QualityControl now check for the presence of the columns IsWellAboveBG and IsSaturated. If not, these
+#            features are calculated so that Quality Control can run normally.
+#            (in case of WellAboveBG, columns containing pixel-standard deviation need to be present, else the function stops)
+# 15-07-2009 Maarten: added 'source' argument to ReadFiles, which is passed to read.maimages
+# 14-07-2009 Maarten: Contents of annotation-list (fields that are in RG$genes) is now tested in ReadFiles. FeatureNum, Row, Col  
+#            and ControlType are obligatory, the other fields are not necessary, since these are only pasted to the output table
+#            at the end of the modelling. 
+# 14-07-2009 Maarten: Edited ReadFiles, Quality Control and CreateSummary to make sure that they check if certain fields are 
+#            present in the RG-object, before performing calculation steps or plotting, which caused these functions to crash
+#            if the fields were not loaded during ReadFiles.
+#            CreateSummary Plots makes only images for fields that are present in Summary
+# 14-07-2009 Maarten: BoxplotPNG now plots 2-logged R and G values if RGList is provided.
+# 13-07-2009 Maarten: Improved ImagePlot3by2Adp function. Logratio-array is now made using MA.RAW.W$M object.
+#            Error in red-coloring of all arrays at IsWellAboveBG-category. Now, the sum of all spots which are above BG is taken instead of the minimum and maximum.
+# 13-07-2009 Maarten: Adapted BoxplotPNG function. RGList provided to the function does now also work (ylim was out of range) 
+#            also turned x-axis labels 90 degrees and determined bottom-margins automatically
+# 13-07-2009 Maarten: Adapted PlotDensities function. If FES was FALSE, the legend was placed over the background plot.
+#            Changed mfrow to c(2,2), so that the legend is plotted in the 4th quadrant 
+# 13-07-2009 Maarten: In HierArchCluster function, it is now not longer needed to provide $M in the first argument, since the function now 
+#            looks for this column automatically.
+# 10-07-2009 Maarten: Added HeatMap function
+# 10-07-2009 Maarten: adaptations to CreateMAPlots function: function tests class of objects that were provided and outputs a decent
+#            error message if needed, it counts number of objects that have a wrong class and cannot be plotted (the correct class ones
+#            will be plotted), mfrows are automatically adapted to the number of plots that remain after checking of classes, 
+#            When more than 4 normalization objects are provided to the function, it gives a decent error message and stops 
+# 08-07-2009 Maarten renamed rSaturated column in other.columns to rIsSaturated, because QualityControl looks for this name
+# 08-07-2009 Maarten added a line in ReadFiles, so that names of other.columns are set to the default values, as the script expects
+# 07-07-2009 Maarten inserted tabs and spaces, so that the layout is consistent
+#            Adapted CreateSummaryPlots to plot number of spots that have been flagged per criterion
+#            Adapted CreateSummaryPlots and PlotDensities to leave part_1, part_2 etc out of filename when there is only 1 part
+#            Adapted writeExpOutput function. logFC is NOT always the 10th column. Now, the number is looked up with a which() statement             
+# 06-07-2009 Maarten adapted MAPlots function. The density coloring is included and it's not necessary to provide EXACTLY 
+#            4 normalization methods. mfrow is now set according to the number of normalization methods. 
+# 02-07-2009 Maarten adapted Imageplot3by2Adp function. Now, titles of outlying arrays are colored red
+# 01-07-2009 (Stan) imageplot3by2Adp | removed RG-parameter, now this function can be used for all forms of data (i.e single-channel data)
+# 01-07-2009 Lars adapted the CalculateSummary function to include specific QC statistics
+# 30-06-2009 Lars adapted QC function, uses fields instead of matrix now
+# 29-06-2009 Maarten removed comments, since this is in the documentation SOP file. Comments that are not described in the SOP are
+#            still present in this script
+# 23-06-2009 (Stan) HierarchClustering | Added new parameters for output (output.type, width, height) and choose whether or not the generated cluster-object is returned (return.value) 
+#            (Stan) BoxplotPNG | Fixed minor bugs when using GenePix data; simplified some object names.
+# 23-06-2009 Stan fixed some minor errors in titles naming.
+# 17-06-2009 Maarten added CreateSummaryPlots function, which visualizes the information from the Summary Object.
+# 15-06-2009 Maarten removed makeLimmaCompatible from ReadFiles function and placed it in the main script. This because updated 
+#            annotation information (see main script) has to be loaded before the makeLimmaCompatible step (because of the dimensions)
+# 11-06-2009 Maarten corrected the wrong arguments in the boxplotPNG function. All plots were default on zero.weight=FALSE, even the filtered spots :S
+# 11-06-2009 Maarten adapted the names of all functions (removed dots (.) from names)
+# 11-06-2009 Maarten added the Hierarchcluster function
+# 11-06-2009 Maarten changed CreateMAplots. Dotsize of the plots was too big. Now, the text with the axes is readable and the dots are smaller.
+# 09-06-2009 Lars changed function to build weights minorly to improve speed
+# 08-06-2009 Maarten revised CreateDensityPlots, considering the arrays per page... First, the last array of a set was not 
+#            plotted for some amounts of arrays.
+#            Maarten changed PlotDensities --> The ranges of X and Y axes are now automatically calculated from the maximum values
+#            and the k and k.max positions are passed by the position-argument in the PlotDensities function.
+# 08-06-2009 Lars changed functions to build QC matrix and weights to be faster and fixed error in mean/median criterion
+# 08-06-2009 Lars moved adding spottypes to the readfiles function
+# 07-06-2009 Lars adapted CreateWeights function to work with any number of checks (not just 4) and much faster
+# 07-06-2009 Lars adapted QC Matrix function to check for proper input and give feedback on options chosen
+# 07-06-2009 Lars adapted ReadFiles function to als set Rb/Gb.Real of controls to NA if present
+# 07-06-2009 Lars adapted MakeLimmaCompatible function to detect which $other fields are present
+# 07-06-2009 Lars adapted the ReadFiles and MakeLimmaCompatible function to detect if weights and Rb/Gb.Real
+#			       are present instead of passing parameters weights and Real.BG from ReadFiles to MakeLimmaCompatible
+# 05-06-2009 (Stan) General - changed png image dimensions to: width=1600, height=1200, pointsize=20 for high-quality images
+#            (Stan) Moved required libraries to top of file
+#            (Stan) ImagePlot3by.own - Fixed minor bug (missing RG)
+#            (Stan) ImagePlot3by.own - Added logscale-option (i.e. log-scaling foreground and background signal, less color discrepancy)
+#            (Stan) ImagePlot3by.own - Increased width factor from 6.5 to 8.5 to improve artifact visualisation
+#            (Stan) PlotDensities - Changed log10 to log2, matching other functions using the log2 scale
+#            (Stan) PlotDensities - Added FES-parameter (default: FALSE) for FES-specific analysis; adjusted code for this
+#            (Stan) PlotDensities - Cleaned up code; Changed text: "Mean intensity" -> "Foreground Intensity" (this can also be a median value!)
+#            (Stan) CreateDensityPlots - Added small line to show function progress to user.
+#            (Stan) naZeroWeights - Simplified used variables, removed excessive code.
+#            (Stan) boxplot.png - Changed default value of Zero.Weight-parameter to FALSE.
+#            (Stan) boxplot.overview - Changed default value of Zero.Weight-parameter to FALSE.
+# 05-06-2009 Maarten renamed data-objects with Agilent in the name to something more general.
+# 03-06-2009 Maarten created Create.Density.Plots function, which is a modification of the original function (see comment 18-05-2009). Now, the number of plots is equally distributed over the pages.
+# 29-05-2009 Maarten changed Quality.Control function; normalization criteria can now be chosen
+#            Maarten changed CreateWeights function. It is now the same function for both type of weights, with other arguments.
+#            Maarten changed imageplot3by2.own function (changed arguments)
+# 27-05-2009 Maarten added the possibility to virtually recreate the arrays by plotting them back with the imageplot3by2.own function
+# 26-05-2009 Maarten placed the reading of the spottypes up in the script. It is now just after ReadFiles
+#            Maarten placed printer layout within the ReadFiles function
+#            Maarten changed the reference parameter in Agilent.design to "Control"  | changed targets into Agilent.RG$targets
+#            Maarten changed the location of some non-standard objects (like weights.norm, weights.HQ) to Agilent.RG$other$...
+# 18-05-2009 Maarten changed the number of DensityPlots in 1 figure to 10. We still need to change this part of code, so that 
+#            different files will be equally filled with plots.
+# 15-05-2009 Maarten added the possibility to plot all types of normalized data (within and between), if necessary
+# 14-05-2009 Maarten made some modifications in resolution/margins of the PlotDensities function (now it works)
+# 13-05-2009 Maarten placed the MA Plots in a new function, called Create.MA.Plots, which can be found in the CreateQCPlots.R file
+# 12-05-2009 Maarten and Lars improved the makeLimmaCompatible function
+# earlier    Maarten categorized and grouped functions that are linked into separate .R-files
+
+# Susan changed the paths on 28-01-2009
+# Susan changes the criteria from (-3,-3,-3,-8) to (-3,-3,-8,-8)
+
