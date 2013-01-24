@@ -1,10 +1,8 @@
 ## One and two channel QC - Dept. of Bioinformatics - BiGCaT - Maastricht University - the Netherlands
 # Version: 1.3.0
 # Last adjustment: 13-11-2012
-# - Added MA[["QUANTILE"]] (next to the existing loessQuantile"
 ## Note: Changed xBGMeanSignal to xBGMediansignal, to reflect the xMedianSignal parameter (it basically means this).
 ## need to check if any other functions are affected.
-
 
 #####################
 ## START OF SCRIPT ##
@@ -28,7 +26,7 @@ dataformat <- match.arg(dataformat, c("fes", "genepix", "generic"))
 datatype <- match.arg(datatype, c("two-channel","green","red"))
 
 ## Check if all necessary packages are installed
-source(paste(scriptpath, "install_arrayQC_packages.R", sep=""))
+source(paste(arrayQC.scriptpath, "install_arrayQC_packages.R", sep=""))
 
 cat("* Entering data directory...")
 setwd(datapath)
@@ -45,11 +43,11 @@ library(affy)
 
 # Reading specific R-scripts (use the reload()-function if you want to reload the scripts later on, e.g. after modifications)
 reload <- function() {
-  source(paste(scriptpath,"requiredColumns.R", sep=""))
-  source(paste(scriptpath,"ReadFiles.R", sep=""))
-  source(paste(scriptpath,"QC.R", sep=""))
-  source(paste(scriptpath,"CreateQCPlots.R", sep=""))
-  source(paste(scriptpath,"functions.EListRaw.R", sep=""))
+  source(paste(arrayQC.scriptpath,"requiredColumns.R", sep=""))
+  source(paste(arrayQC.scriptpath,"ReadFiles.R", sep=""))
+  source(paste(arrayQC.scriptpath,"QC.R", sep=""))
+  source(paste(arrayQC.scriptpath,"CreateQCPlots.R", sep=""))
+  source(paste(arrayQC.scriptpath,"functions.EListRaw.R", sep=""))
 }
 
 reload()
@@ -160,7 +158,7 @@ if(!file.exists(paste(datapath, "description.txt", sep=""))) {
 ## Reading in scanner output files and save this in the RG-object (makes use of read.maimages()):
 
 setwd(workpath)
-RG <- ReadFiles(description.file=experimentalDescr, spottypes.file=spotfile, data.path=datapath, columns=columns, other=other.columns, annotation=annotation, blocks=blocks, source=package, use.description=TRUE, save.backup=TRUE, manual.flags=useAsManualFlags, controlType.value=controlType.value, arrayQC.path=scriptpath)
+RG <- ReadFiles(description.file=experimentalDescr, spottypes.file=spotfile, data.path=datapath, columns=columns, other=other.columns, annotation=annotation, blocks=blocks, source=package, use.description=TRUE, save.backup=TRUE, manual.flags=useAsManualFlags, controlType.value=controlType.value, arrayQC.path=arrayQC.scriptpath)
 
 ## Sometimes the software doesn't provide information about the Blocknumber, whereas this information
 #  is present in the GAL file. .addBlockInfo will recreate these numbers and add them to the annotation
@@ -209,16 +207,15 @@ cat("*------------\n| Data Normalization\n*------------\n")
 MA <- list()
 
 if(RG$datatype == "both") {
-  MA[["RAW"]] <- normalizeWithinArrays(RG, RG$printer, method="none", bc.method="subtract", offset=0, weights=NULL)
+  MA[["BGCORRECTED"]] <- normalizeWithinArrays(RG, RG$printer, method="none", bc.method="subtract", offset=0, weights=NULL)
   MA[["LOESS"]] <- normalizeWithinArrays(RG, RG$printer, method="loess", iterations=4, bc.method="subtract", offset=0, weights=RG$other$weights.norm)
   MA[["LOESS.SCALED"]] <- normalizeBetweenArrays(MA[["LOESS"]], method="scale")
   MA[["LOESS.QUANTILE"]] <- normalizeBetweenArrays(MA[["LOESS"]], method="quantile")
   MA[["LOESS.AQUANTILE"]] <- normalizeBetweenArrays(MA[["LOESS"]], method="Aquantile")
-  MA[["QUANTILE"]] <- normalizeBetweenArrays(MA[["RAW"]], method="quantile")
 } else {
   RG2 <- RG
   RG2$R <- RG2$G <- RG2$E
-  RG2$Rb <- RG2Gb <- RG2$Eb
+  RG2$Rb <- RG2$Gb <- RG2$Eb
   switch(datatype, "red" = {
     RG2$G[] <- apply(RG2$R,1,mean,na.rm=TRUE)
     RG2$Gb[] <- apply(RG2$Rb,1,mean,na.rm=TRUE)
@@ -226,20 +223,20 @@ if(RG$datatype == "both") {
     RG2$R[] <- apply(RG2$G,1,mean,na.rm=TRUE)
     RG2$Rb[] <- apply(RG2$Gb,1,mean,na.rm=TRUE)
   })
-  MA[["RAW"]] <- normalizeWithinArrays(RG2, RG2$printer, method="none", bc.method="subtract", offset=0, weights=NULL)
-  MA[["RAW"]]$other$EST <- MA[["RAW"]]$A+MA[["RAW"]]$M/2
+  MA[["BGCORRECTED"]] <- normalizeWithinArrays(RG2, RG2$printer, method="none", bc.method="subtract", offset=0, weights=NULL)
+  MA[["BGCORRECTED"]]$other$EST <- MA[["BGCORRECTED"]]$A + MA[["BGCORRECTED"]]$M/2
   MA[["LOESS"]] <- normalizeWithinArrays(RG2, RG2$printer, method="loess", iterations=4, bc.method="subtract", offset=0, weights=RG2$other$weights.norm)
   MA[["LOESS"]]$other$EST <- MA[["LOESS"]]$A+MA[["LOESS"]]$M/2
-  MA[["SCALED"]] <- normalizeBetweenArrays(MA[["RAW"]]$other$EST, method="scale")
-  MA[["QUANTILE"]] <- normalizeBetweenArrays(MA[["RAW"]]$other$EST, method="quantile")
+  MA[["SCALED"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="scale")
+  MA[["QUANTILE"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="quantile")
   rm(RG2)
 }
 cat("status: OK\n\n")
 
-if(CheckVirtualImages == 1) {
+if(plotVirtualImages == 1) {
   ## Plotting of virtual array images
   cat("*------------\n| Virtual Images\n*------------\n")
-  switch(datatype, "both" = {
+  switch(RG$datatype, "both" = {
     cat("* Based on red channel ...\n")
     imageplot3by2Adp(RG, RG$R, "RedSignal", high="red", low="yellow")
     imageplot3by2Adp(RG, RG$Rb, "RedBckgrndSignal", high="red", low="yellow")
@@ -256,30 +253,19 @@ if(CheckVirtualImages == 1) {
     imageplot3by2Adp(RG, RG$Eb, "GreenBckgrndSignal", high="#00aa00", low="yellow")
   })
 
+  cat("* Based on normalized data ...\n") 
   if(RG$datatype == "both") {
     for(i in 1:length(MA)) {
       imageplot3by2Adp(MA[[i]], MA[[i]]$M, paste(names(MA)[i],"_LogRatio", sep=""), high="blue", low="yellow", symm=TRUE)
       imageplot3by2Adp(MA[[i]], MA[[i]]$A, paste(names(MA)[i],"_AverageIntensity", sep=""), high="blue", low="yellow", symm=TRUE)
     }
   } else {
-    imageplot3by2Adp(MA[["RAW"]], MA[["RAW"]]$other$EST, "RAW_EstimatedSignal" high="blue", low="yellow", symm=TRUE)
+    imageplot3by2Adp(MA[["BGCORRECTED"]], MA[["BGCORRECTED"]]$other$EST, "RAW_EstimatedSignal", high="blue", low="yellow", symm=TRUE)
     imageplot3by2Adp(MA[["LOESS"]], MA[["LOESS"]]$other$EST, "LOESS_EstimatedSignal", high="blue", low="yellow", symm=TRUE)
-    imageplot3by2Adp(MA[["RAW"]], MA[["SCALED"]], "SCALED_EstimatedSignal", high="blue", low="yellow", symm=TRUE)
-    imageplot3by2Adp(MA[["RAW"]], MA[["QUANTILE"]], "QUANTILE_EstimatedSignal", high="blue", low="yellow", symm=TRUE)
+    imageplot3by2Adp(MA[["BGCORRECTED"]], MA[["SCALED"]], "SCALED_EstimatedSignal2", high="blue", low="yellow", symm=TRUE)
+    imageplot3by2Adp(MA[["BGCORRECTED"]], MA[["QUANTILE"]], "QUANTILE_EstimatedSignal", high="blue", low="yellow", symm=TRUE)
   }
  
-  cat("* Based on normalized data ...\n") 
-  if(RG$datatype=="both") {
-    imageplot3by2Adp(MA.RAW.W, MA.RAW.W$M, "RAW_LogRatio", high="blue", low="yellow", symm=TRUE)
-    imageplot3by2Adp(MA.RAW.W, MA.RAW.W$A, "RAW_AverageIntensity", high="blue", low="yellow", symm=FALSE)
-    imageplot3by2Adp(MA.LOESS.W, MA.LOESS.W$M, "LOESS_LogRatio", high="blue", low="yellow", symm=TRUE)
-    imageplot3by2Adp(MA.LOESS.W, MA.LOESS.W$A, "LOESS_AverageIntensity", high="blue", low="yellow", symm=FALSE)
-  } else {
-    imageplot3by2Adp(MA.RAW.W, MA.RAW.W$other$EST, "EstimatedSignal", high="blue", low="yellow", symm=FALSE)
-    imageplot3by2Adp(MA.LOESS.W, MA.LOESS.W$other$EST, "LOESS_EstimatedSignal", high="blue", low="yellow", symm=FALSE)
-    imageplot3by2Adp(MA.RAW.W, MA.SCALED, "Scaled_EstimatedSignal", high="blue", low="yellow", symm=FALSE)
-    imageplot3by2Adp(MA.RAW.W, MA.QUANTILE, "Quantile_EstimatedSignal", high="blue", low="yellow", symm=FALSE)
-  }
 
   cat("* Based on various (quality) parameters ...\n") 
   if(!is.null(RG$other$rNumPix)) { imageplot3by2Adp(RG, RG$other$rNumPix, "RedNumberPixels", high="red", low="yellow") }
@@ -294,13 +280,16 @@ if(CheckVirtualImages == 1) {
   if(!is.null(RG$other$NOTWellAboveBG)) imageplot3by2Adp(RG, RG$other$NOTWellAboveBG, "NOTWellAboveBG", high="orange", low="sienna")
   if(!is.null(RG$other$Saturated)) imageplot3by2Adp(RG, RG$other$Saturated, "Saturated", high="orange", low="sienna")
   if(!is.null(RG$other$weights.norm)) imageplot3by2Adp(RG, RG$other$weights.norm, "WeightsForNormalization", high="purple2", low="white")
-  if(!is.null(RG$weights)) imageplot3by2Adp(RG, RG$weights, "Weights", high="purple2", low="white")
-  cat(" done.\n")
-
+  if(!is.null(RG$weights)) imageplot3by2Adp(RG, RG$weights, "arrayQC_Weights", high="purple2", low="white")
 }
 cat(" done.\n\nstatus: OK\n\n")
 
-if(checkClustering == 1) {
+if( dim(RG)[2] < 3 ) {
+  cat("[[ CLUSTER ]] No clustering was performed due to too few samples!\n")
+  plotClust <- 0
+}
+
+if(plotClust == 1) {
   cat("*------------\n| Clustering\n*------------\n")
   ## Cluster plots - by default: dist.method="euclidean", clust.method="ward". Can be changed by other methods available in ?hdist and ?hclust
   if(RG$datatype=="both") {
@@ -312,7 +301,6 @@ if(checkClustering == 1) {
       rm(addTitle)
     }
   } else {
-    ## HierarchCluster(MA[[normMethod]]
     HierarchCluster(MA[["RAW"]]$other$EST, main="Raw Data (RAW)")
     HierarchCluster(MA[["LOESS"]]$other$EST, main="LOESS Normalized Data")
     HierarchCluster(MA[["SCALED"]], main="SCALED Normalized Data")
@@ -321,56 +309,36 @@ if(checkClustering == 1) {
   cat("status: OK\n\n")
 }
 
-if(CheckHeatmap == 1) {
-cat("*------------\n| Correlation plots / heatmaps\n*------------\n")
- for(i in 1:length(MA)) {
-   addTitle <- names(MA)[i]
-   CreateHeatMap(MA[[i]], main=addTitle)
-   rm(addTitle)
- }
- cat("status: OK\n\n")
+if(plotHeatmap == 1) {
+  cat("*------------\n| Correlation plots / heatmaps\n*------------\n")
+  CreateCorplot(RG, which.channel="R", data.type="Raw_data")
+  CreateCorplot(RG, which.channel="G", data.type="Raw_data")
+  for(i in 1:length(MA)) {
+    CreateHeatMap(MA[i])
+    CreateCorplot(MA[i], which.channel="M")
+    CreateCorplot(MA[i], which.channel="A")
+  }
+  cat("status: OK\n\n")
 }
 
-cat("*------------\n| Correlation plots / heatmaps\n*------------\n")
-## Heatmaps
-CreateHeatMap(MA.RAW.W)
-CreateHeatMap(MA.LOESS.W)
-if(RG$datatype=="both") {
-  CreateHeatMap(MA.LOESS.SCALED.W)
-  CreateHeatMap(MA.LOESS.QUANTILE.W)
-  CreateHeatMap(MA.LOESS.AQUANTILE.W)
-} else {
-  CreateHeatMap(MA.SCALED)
-  CreateHeatMap(MA.QUANTILE)
-}
-cat("status: OK\n\n")
 
 ## PCA plots
-cat("*------------\n| PCA plots\n*------------\n")
-CreatePCAplot(MA.RAW.W)
-CreatePCAplot(MA.LOESS.W)
-if(RG$datatype=="both") {
-  CreatePCAplot(MA.LOESS.SCALED.W)
-  CreatePCAplot(MA.LOESS.QUANTILE.W)
-  CreatePCAplot(MA.LOESS.AQUANTILE.W)
-} else {
-  CreatePCAplot(MA.SCALED)
-  CreatePCAplot(MA.QUANTILE)
+if(plotPCA == 1) {
+  cat("*------------\n| PCA plots\n*------------\n")
+  for(i in 1:length(MA)) {
+    CreatePCAplot(MA[i])
+  }
+  cat("status: OK\n\n")
 }
-cat("status: OK\n\n")
+
 
 ## Density Plots
-cat("*------------\n| Density Plots\n*------------\n")
-CreateDensityPlots(RG, name = "Raw Data")
-CreateDensityPlots(MA.RAW.W, name = "Raw BG Corrected Data")
-CreateDensityPlots(MA.LOESS.W, name = "LOESS Normalized Data")
-if(RG$datatype=="both") {
-    CreateDensityPlots(MA.LOESS.SCALED.W, name = "LOESS and SCALED Data")
-    CreateDensityPlots(MA.LOESS.QUANTILE.W, name = "LOESS and QUANTILE Data")
-    CreateDensityPlots(MA.LOESS.AQUANTILE.W, name = "LOESS and AQUANTILE Data")
-} else {
-  CreateDensityPlots(MA.SCALED, name = "SCALED Normalized Data")
-  CreateDensityPlots(MA.QUANTILE, name = "QUANTILE Normalized Data")
+if(plotDensity == 1) {
+  cat("*------------\n| Density Plots\n*------------\n")
+  CreateDensityPlots(RG, name="Raw Data")
+  for(i in 1:length(MA)) {
+    CreateDensityPlots(MA[i])
+  }
 }
 
 ## Boxplots
