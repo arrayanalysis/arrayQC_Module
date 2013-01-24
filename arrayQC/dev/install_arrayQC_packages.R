@@ -23,5 +23,5 @@
 }
 
 #.checkPackages(c("affy","limma","RColorBrewer","gplots","geneplotter", "shape", "plotrix"))
-.checkPackages(c("affy","limma","RColorBrewer","gplots","geneplotter", "shape"))
+.checkPackages(c("affy","limma","RColorBrewer","gplots","geneplotter", "shape", "Ringo"))
 

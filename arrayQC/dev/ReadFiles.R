@@ -3,6 +3,8 @@
 ################################
 ##     ReadFiles function     ##
 ################################
+## 
+
 ## 08-08-2012
 #  - fixed wrong reference (RG$source) in makeLimmaCompatible()
 ## 25/07/2012
@@ -54,6 +56,16 @@
 
 ## To do:
 ## if datatype <- "dual-channel" and only one channel is present, give a specific warning!
+
+
+## normMatrix is a data matrix which will be used to convert the normMethod
+normMatrix <- matrix(data=NA, ncol=3, nrow=5)
+rownames(normMatrix) <- c("raw", "loess","scaled","quantile","aquantile")
+colnames(normMatrix) <- c("both", "red", "green")
+normMatrix[,1] <- c("RAW", "LOESS","LOESS.SCALED","LOESS.QUANTILE","LOESS.AQUANTILE")
+normMatrix[,2] <- normMatrix[,3] <- c("RAW", NA, "SCALED", "QUANTILE", NA)
+
+
 
 require(limma)
 

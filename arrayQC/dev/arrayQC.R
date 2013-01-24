@@ -8,25 +8,19 @@
 
 ## Enter the directories to be used, use forward slashes (/) or double backward slashed (\\) as separator
 #  and end with a forward slash
-datapath  <- ""
-scriptpath <- "/home/stan/Desktop/SVN/r-packages/arrayQC/dev/"
+datapath  <- "/home/stan/Desktop/PipelinePaper/set3/"
+arrayQC.scriptpath <- "/home/stan/Desktop/SVN/r-packages/arrayQC/dev/"
 # scriptpath <- "http://svn.bigcat.unimaas.nl/r-packages/arrayQC/dev/"
 
 
-## Select the data format of the microarray data files
-# "fes" (Feature Extraction Software), "genepix" or "generic" are valid here
-dataformat <- ""
-
-## Select the type of data set
-# "two-channel", "red" or "green" are valid options
-datatype <- ""
+dataformat <- "fes"  # Select data format of the microarray data files; "fes" (Feature Extraction Software), "genepix" or "generic" are valid here
+datatype <- "green"  # Describe what type of microarrays are used in your dataset; "two-channel", "red" or "green" are valid options
 
 ## If the microarray contains more than one block, please change the values below accordingly.
 # 
 number.of.blocks <- NULL
 nblock.row <- NULL
 nblock.col <- NULL
-
 
 ## columnHeader file. Change this value to the name (and location) of the file containing the 
 #  column headers that will be read in. For standard Agilent and GenePix runs this variable
@@ -48,21 +42,22 @@ controlType.value <- NULL
 
 ## Variables that are set to run the script. Only when arrayQC.mode is set to "local"
 ## Nog even over nadenken hoe dit wordt aangepast door de webservice...
-if(arrayQC.mode == "local") {
-  CheckVirtualImages <- TRUE
-  CheckBoxplot <- TRUE
-  CheckHeatmap <- TRUE
-  CheckClustering <- TRUE
-  CheckPCA <- TRUE
-  CheckCorplot <- TRUE
-  CheckMvA <- TRUE
-}
+#if(arrayQC.mode == "local") {
+  plotVirtualImages <- TRUE
+  plotBoxplot <- TRUE
+  plotHeatmap <- TRUE
+  plotClust <- TRUE
+  plotPCA <- TRUE
+  plotCor <- TRUE
+  plotMvA <- TRUE
+  plotDensity <- TRUE
+#}
 
 
 ## If you want to run arrayQC locally, download the files from the scriptpath mentioned above
 #  and refer to these files in the scriptpath variable. Recommended for experienced R programmers.
 
-source(paste(scriptpath, "run_arrayQC.R", sep=""))
+source(paste(arrayQC.scriptpath, "run_arrayQC.R", sep=""))
 
 
 ###########################
