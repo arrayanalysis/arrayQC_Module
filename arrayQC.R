@@ -14,7 +14,7 @@ arrayQC.scriptpath <- "/home/stan/Desktop/SVN/r-packages/arrayQC/dev/"
 
 
 dataformat <- "fes"  # Select data format of the microarray data files; "fes" (Feature Extraction Software), "genepix" or "generic" are valid here
-datatype <- "green"  # Describe what type of microarrays are used in your dataset; "two-channel", "red" or "green" are valid options
+datatype <- "both"  # Describe what type of microarrays are used in your dataset; "two-channel", "red" or "green" are valid options
 
 ## If the microarray contains more than one block, please change the values below accordingly.
 # 
@@ -51,6 +51,7 @@ controlType.value <- NULL
   plotCor <- TRUE
   plotMvA <- TRUE
   plotDensity <- TRUE
+  normMethod <- "loess"
 #}
 
 

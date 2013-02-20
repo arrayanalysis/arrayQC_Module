@@ -1,6 +1,6 @@
 ## One and two channel QC - Dept. of Bioinformatics - BiGCaT - Maastricht University - the Netherlands
-# Version: 1.3.0
-# Last adjustment: 13-11-2012
+# Version: 1.3.1
+# Last adjustment: 25-01-2013
 ## Note: Changed xBGMeanSignal to xBGMediansignal, to reflect the xMedianSignal parameter (it basically means this).
 ## need to check if any other functions are affected.
 
@@ -226,7 +226,7 @@ if(RG$datatype == "both") {
   MA[["BGCORRECTED"]] <- normalizeWithinArrays(RG2, RG2$printer, method="none", bc.method="subtract", offset=0, weights=NULL)
   MA[["BGCORRECTED"]]$other$EST <- MA[["BGCORRECTED"]]$A + MA[["BGCORRECTED"]]$M/2
   MA[["LOESS"]] <- normalizeWithinArrays(RG2, RG2$printer, method="loess", iterations=4, bc.method="subtract", offset=0, weights=RG2$other$weights.norm)
-  MA[["LOESS"]]$other$EST <- MA[["LOESS"]]$A+MA[["LOESS"]]$M/2
+  MA[["LOESS"]]$other$EST <- MA[["LOESS"]]$A + MA[["LOESS"]]$M / 2
   MA[["SCALED"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="scale")
   MA[["QUANTILE"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="quantile")
   rm(RG2)
@@ -301,7 +301,7 @@ if(plotClust == 1) {
       rm(addTitle)
     }
   } else {
-    HierarchCluster(MA[["RAW"]]$other$EST, main="Raw Data (RAW)")
+    HierarchCluster(MA[["BGCORRECTED"]]$other$EST, main="Raw Data (BGCORRECTED)")
     HierarchCluster(MA[["LOESS"]]$other$EST, main="LOESS Normalized Data")
     HierarchCluster(MA[["SCALED"]], main="SCALED Normalized Data")
     HierarchCluster(MA[["QUANTILE"]], main="QUANTILE Normalized Data")
@@ -311,8 +311,15 @@ if(plotClust == 1) {
 
 if(plotHeatmap == 1) {
   cat("*------------\n| Correlation plots / heatmaps\n*------------\n")
-  CreateCorplot(RG, which.channel="R", data.type="Raw_data")
-  CreateCorplot(RG, which.channel="G", data.type="Raw_data")
+  switch(datatype, "both" =
+    CreateCorplot(RG, which.channel="R", data.type="Red_Raw_data")
+    CreateCorplot(RG, which.channel="G", data.type="Green_Raw_data")
+  , "green" = {
+    CreateCorplot(RG, which.channel="E", data.type="Green_Raw_data") 
+  }, "red" = {
+    CreateCorplot(RG, which.channel="E", data.type="Green_Raw_data")
+  })
+
   for(i in 1:length(MA)) {
     CreateHeatMap(MA[i])
     CreateCorplot(MA[i], which.channel="M")

@@ -634,7 +634,6 @@ PlotDensities <- function (x, position, outputName=NULL, name=NULL) {
   maxArrays <- position[2]-position[1]+1
   if(is.null(outputName)) {stop(cat("PlotDensities() error. Please define the outputName variable in the function\n\n"))}
   if(is.null(name)) {stop(cat("PlotDensities() error. Please define the name variable in the function\n\n"))}
-  
   labels.green <- NULL
   labels.red <- NULL
   labels.matrix <- NULL
@@ -768,7 +767,8 @@ PlotDensities <- function (x, position, outputName=NULL, name=NULL) {
       x.max.fg <- ceiling(max(sapply(apply(corr.foreground, 2, density, na.rm=TRUE), function(z) max(z$x))))
       y.min.fg <- 0
       y.max.fg <- ceiling(max(sapply(apply(corr.foreground, 2, density, na.rm=TRUE), function(z) max(z$y))))
-      plotDensity(as.matrix(corr.foreground[,selection]), col=color, lty=1:length(selection), lwd=2, xlim=c(x.min.fg,x.max.fg), ylim=c(y.min.fg,y.max.fg), main="BG Corrected Foreground Signal Distribution", xlab=paste("Log2(Intensity) -",name), ylab="Density")
+     if(class(x) == "list") { lab.title <- paste(names(x), " Foreground Signal Distribution") } else { lab.title <- "BG Corrected Foreground Signal Distribution") }
+      plotDensity(as.matrix(corr.foreground[,selection]), col=color, lty=1:length(selection), lwd=2, xlim=c(x.min.fg,x.max.fg), ylim=c(y.min.fg,y.max.fg), main=lab.title, xlab=paste("Log2(Intensity) -",name), ylab="Density")
     }
   }
   
