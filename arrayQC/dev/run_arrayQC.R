@@ -204,7 +204,8 @@ CreateSummaryPlots(RG)
 
 
 cat("*------------\n| Data Normalization\n*------------\n")
-MA <- list()
+## MA are MA-objects, MA2 are matrices (single-channel only)
+MA <- MA2 <- list()
 
 if(RG$datatype == "both") {
   MA[["BGCORRECTED"]] <- normalizeWithinArrays(RG, RG$printer, method="none", bc.method="subtract", offset=0, weights=NULL)
@@ -213,6 +214,7 @@ if(RG$datatype == "both") {
   MA[["LOESS.QUANTILE"]] <- normalizeBetweenArrays(MA[["LOESS"]], method="quantile")
   MA[["LOESS.AQUANTILE"]] <- normalizeBetweenArrays(MA[["LOESS"]], method="Aquantile")
 } else {
+  ## normalizeWithinArrays does NOT support EListRaw objects, as such we have to make use of RG2
   RG2 <- RG
   RG2$R <- RG2$G <- RG2$E
   RG2$Rb <- RG2$Gb <- RG2$Eb
@@ -224,11 +226,16 @@ if(RG$datatype == "both") {
     RG2$Rb[] <- apply(RG2$Gb,1,mean,na.rm=TRUE)
   })
   MA[["BGCORRECTED"]] <- normalizeWithinArrays(RG2, RG2$printer, method="none", bc.method="subtract", offset=0, weights=NULL)
-  MA[["BGCORRECTED"]]$other$EST <- MA[["BGCORRECTED"]]$A + MA[["BGCORRECTED"]]$M/2
-  MA[["LOESS"]] <- normalizeWithinArrays(RG2, RG2$printer, method="loess", iterations=4, bc.method="subtract", offset=0, weights=RG2$other$weights.norm)
-  MA[["LOESS"]]$other$EST <- MA[["LOESS"]]$A + MA[["LOESS"]]$M / 2
-  MA[["SCALED"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="scale")
-  MA[["QUANTILE"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="quantile")
+  switch(datatype, "red" = {   MA[["BGCORRECTED"]]$other$EST <- MA[["BGCORRECTED"]]$A + MA[["BGCORRECTED"]]$M/2 },
+                   "green" = { MA[["BGCORRECTED"]]$other$EST <- MA[["BGCORRECTED"]]$A - MA[["BGCORRECTED"]]$M/2 })
+  MA[["LOESS"]] <- normalizeWithinArrays(RG2, RG2$printer, method="loess", iterations=4, bc.method="subtract", offset=0, weights=RG2$other$weights.norm) 
+  switch(datatype, "red" = {   MA[["LOESS"]]$other$EST <- MA[["LOESS"]]$A + MA[["LOESS"]]$M/2 },
+                   "green" = { MA[["LOESS"]]$other$EST <- MA[["LOESS"]]$A - MA[["LOESS"]]$M/2 })
+
+  MA2[["BGCORRECTED"]] <- MA[["BGCORRECTED"]]$other$EST
+  MA2[["LOESS"]] <- MA[["BGCORRECTED"]]$other$EST
+  MA2[["SCALED"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="scale")
+  MA2[["QUANTILE"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="quantile")
   rm(RG2)
 }
 cat("status: OK\n\n")
@@ -260,13 +267,16 @@ if(plotVirtualImages == 1) {
       imageplot3by2Adp(MA[[i]], MA[[i]]$A, paste(names(MA)[i],"_AverageIntensity", sep=""), high="blue", low="yellow", symm=TRUE)
     }
   } else {
-    imageplot3by2Adp(MA[["BGCORRECTED"]], MA[["BGCORRECTED"]]$other$EST, "RAW_EstimatedSignal", high="blue", low="yellow", symm=TRUE)
-    imageplot3by2Adp(MA[["LOESS"]], MA[["LOESS"]]$other$EST, "LOESS_EstimatedSignal", high="blue", low="yellow", symm=TRUE)
-    imageplot3by2Adp(MA[["BGCORRECTED"]], MA[["SCALED"]], "SCALED_EstimatedSignal2", high="blue", low="yellow", symm=TRUE)
-    imageplot3by2Adp(MA[["BGCORRECTED"]], MA[["QUANTILE"]], "QUANTILE_EstimatedSignal", high="blue", low="yellow", symm=TRUE)
+    temp <- names(MA2)
+    for(i in 1:length(MA2)) {
+      if(temp[i] == "LOESS") {
+        imageplot3by2Adp(MA[["LOESS"]], MA2[[i]], paste(temp[i],"_EstimatedSignal", sep=""), high="blue", low="yellow", symm=TRUE)
+      } else {
+        imageplot3by2Adp(MA[["BGCORRECTED"]], MA2[[i]], paste(temp[i],"_EstimatedSignal", sep=""), high="blue", low="yellow", symm=TRUE)
+      }
+    }
+    rm(temp)
   }
- 
-
   cat("* Based on various (quality) parameters ...\n") 
   if(!is.null(RG$other$rNumPix)) { imageplot3by2Adp(RG, RG$other$rNumPix, "RedNumberPixels", high="red", low="yellow") }
   if(!is.null(RG$other$rIsWellAboveBG)) { imageplot3by2Adp(RG, RG$other$rIsWellAboveBG, "RedWellAboveBckgrnd", high="red", low="white") }
@@ -290,51 +300,76 @@ if( dim(RG)[2] < 3 ) {
 }
 
 if(plotClust == 1) {
+  if(!exists(as.character(substitute(cluster.distance)))) { cluster.distance <- "euclidean" }
+  if(!exists(as.character(substitute(cluster.method)))) { cluster.method <- "ward" }
   cat("*------------\n| Clustering\n*------------\n")
-  ## Cluster plots - by default: dist.method="euclidean", clust.method="ward". Can be changed by other methods available in ?hdist and ?hclust
+  ## Cluster plots - by default: cluster.distance="euclidean", cluster.method="ward". Can be changed by other methods available in ?hdist and ?hclust
   if(RG$datatype=="both") {
     for(i in 1:length(MA)) {
-      switch(names(MA)[i], "RAW" = { 
+      switch(names(MA)[i], "RAW" = { ######### NEED TO CHECK IF THIS IS STILL VALID!!!
          addTitle <- "RAW Data"
       }, addTitle <- paste( names(MA)[i], "Normalized Data"))
-      HierarchCluster(MA[[i]]$M, main=addTitle)
+      HierarchCluster(MA[[i]]$M, main=addTitle, dist.method = cluster.distance, clust.method = cluster.method)
       rm(addTitle)
     }
   } else {
-    HierarchCluster(MA[["BGCORRECTED"]]$other$EST, main="Raw Data (BGCORRECTED)")
-    HierarchCluster(MA[["LOESS"]]$other$EST, main="LOESS Normalized Data")
-    HierarchCluster(MA[["SCALED"]], main="SCALED Normalized Data")
-    HierarchCluster(MA[["QUANTILE"]], main="QUANTILE Normalized Data")
+    for(i in 1:length(MA2)) {
+      switch(names(MA2)[i], "BGCORRECTED" = {
+        addTitle <- "BGCorrected Data)"
+      }, addTitle <- paste(names(MA2)[i], "Normalized Data") })
+      HierarchCluster(MA2[[i]], main=addTitle, dist.method = cluster.distance, clust.method = cluster.method)
+      rm(addTitle)
+    }
   }
   cat("status: OK\n\n")
 }
 
-if(plotHeatmap == 1) {
-  cat("*------------\n| Correlation plots / heatmaps\n*------------\n")
-  switch(datatype, "both" =
-    CreateCorplot(RG, which.channel="R", data.type="Red_Raw_data")
-    CreateCorplot(RG, which.channel="G", data.type="Green_Raw_data")
-  , "green" = {
-    CreateCorplot(RG, which.channel="E", data.type="Green_Raw_data") 
+if(plotCor == 1) {
+  cat("*------------\n| Correlation plots \n*------------\n")
+  switch(datatype, "both" = {
+    CreateCorplot(RG, which.channel="R", data.type="RAW_Red_data")
+    CreateCorplot(RG, which.channel="G", data.type="RAW_Green_data")
+  }, "green" = {
+    CreateCorplot(RG, which.channel="E", data.type="RAW_Green_data") 
   }, "red" = {
-    CreateCorplot(RG, which.channel="E", data.type="Green_Raw_data")
+    CreateCorplot(RG, which.channel="E", data.type="RAW_Red_data")
   })
+  if(datatype == "both") {
+    for(i in 1:length(MA)) {
+      CreateCorplot(MA[i], which.channel="M")
+      CreateCorplot(MA[i], which.channel="A")
+      cat(".")
+    }
+  } else {
+    for(i in 1:length(MA2)) {
+      CreateCorplot(MA2[i])
+      cat(".")
+    }
+  }
+  cat("\nstatus: OK\n\n")
+}
 
+## Heatmaps
+cat("*------------\n| Heatmaps \n*------------\n")
+if(plotHeatmap == 1) {
   for(i in 1:length(MA)) {
     CreateHeatMap(MA[i])
-    CreateCorplot(MA[i], which.channel="M")
-    CreateCorplot(MA[i], which.channel="A")
   }
-  cat("status: OK\n\n")
 }
 
 
 ## PCA plots
 if(plotPCA == 1) {
   cat("*------------\n| PCA plots\n*------------\n")
-  for(i in 1:length(MA)) {
-    CreatePCAplot(MA[i])
-  }
+  switch(datatype, "two-channel" = {
+    for(i in 1:length(MA)) {
+      CreatePCAplot(MA[i])
+    }
+  }, {
+    for(i in 1:length(MA2)) {
+      CreatePCAplot(MA2[i])
+    }
+  })
   cat("status: OK\n\n")
 }
 
@@ -342,11 +377,21 @@ if(plotPCA == 1) {
 ## Density Plots
 if(plotDensity == 1) {
   cat("*------------\n| Density Plots\n*------------\n")
-  CreateDensityPlots(RG, name="Raw Data")
-  for(i in 1:length(MA)) {
-    CreateDensityPlots(MA[i])
-  }
+#  CreateDensityPlots(RG, name="Raw Data") ## We seem to have some issues with EListRaw objects. RAW data doesn't provide extra information that BGCORRECTED doesn't show (I think), so adding a comment line (for now)
+  switch(datatype, "two-channel" = {
+    for(i in 1:length(MA)) { CreateDensityPlots(MA[i]) }
+  }, {
+    for(i in 1:length(MA2)) { CreateDensityPlots(MA2[i]) }
+  })
 }
+
+if(plotBoxplot == 1) {
+  cat("*------------\n| Boxplots\n*------------\n")
+  boxplotOverview
+}
+
+
+
 
 ## Boxplots
 cat("*------------\n| Boxplots\n*------------\n")

@@ -393,22 +393,43 @@ CreateHeatMap <- function(data, main=NULL, image.width=2000, image.height=1400, 
 }
 
 ## CreateCorplot
-CreateCorplot <- function(x, which.channel=NULL, data.type=NULL) {
-  if(is.null(which.channel)) { stop("Please define your parameters properly") }
+CreateCorplot <- function(x, which.channel=NULL, data.type=NULL, fileName = NULL) {
+  y <- NULL
   if(class(x) == "list") {
     if(is.null(data.type)) {
       data.type <- names(x)
     }
     x <- x[[1]]
   }
-  if(!is.null(data.type)) { 
-    fileName <- paste("Correlation_Plot_", data.type, "_", which.channel, ".png", sep="")
-  } else {
-    cat("Please provide the type.data parameter if you would like to add a specific title to your filename!\n")
-    fileName <- paste("Correlation_Plot_", which.channel,".png")
+  checks <- c("MAList", "RGList", "EListRaw", "matrix")
+  if(sum(class(x) %in% checks) == 1) {
+    if(sum(class(x) %in% checks[1:3]) == 1) {
+      ## Now we expect that which.channel is filled in!!
+      if(is.null(which.channel)) { stop("For an object of the MAList/RGList/EListRaw class the which.channel variable needs to be filled in!") }
+      if(is.null(fileName)) {
+        if(!is.null(data.type)) { 
+          fileName <- paste("Correlation_Plot_", data.type, "_", which.channel, ".png", sep="")
+        } else {
+          cat("Please provide the type.data parameter if you would like to add a specific title to your filename!\n")
+          fileName <- paste("Correlation_Plot_", which.channel,".png")
+        }
+      }
+      y <- x[[which.channel]]
+    }
+    if( class(x) == "matrix" ) {
+      y <- x
+      if(is.null(fileName)) {
+        if(is.null(data.type)) { 
+          fileName <- "Correlation_Plot.png"
+        } else { 
+          fileName <- paste("Correlation_Plot_", data.type, ".png", sep="")
+        }
+      }
+    }
   }
-  png(file=fileName, width= (1600 * ceiling( dim(x)[2] / 40) ), height=(1600 * ceiling( dim(x)[2] / 40) ), pointsize=25)
-  corPlot(x[[which.channel]], useSmoothScatter=FALSE)
+  if(is.null(y)) { stop(paste("object x is not of the following class:\n- ", paste(checks, collapse=" / "), sep="")) }
+  png(file=fileName, width= (1600 * ceiling( dim(y)[2] / 40) ), height=(1600 * ceiling( dim(y)[2] / 40) ), pointsize=25)
+  corPlot(y, useSmoothScatter=FALSE)
   dev.off()
 }
 
@@ -417,14 +438,15 @@ CreateCorplot <- function(x, which.channel=NULL, data.type=NULL) {
 ## CreatePCAplot function   ##
 ##############################
 
-CreatePCAplot <- function(data, scaled_pca=TRUE, namesInPlot=FALSE){
+CreatePCAplot <- function(data, main=NULL, scaled_pca=TRUE, namesInPlot=FALSE){
   # PCA performed on reporters NOT containing NAs only
   # Scaled PCA by default
-  main.temp <- NULL
   if(class(data) == "list") { 
     if(length(data) > 1) { stop("List with more than 1 element found!\n") }
     main.temp <- names(data)
     data <- data[[1]]
+  } else {
+    main.temp <- main
   }
   
   if(class(data)!= "matrix") {
@@ -449,7 +471,7 @@ CreatePCAplot <- function(data, scaled_pca=TRUE, namesInPlot=FALSE){
     plotColors <- rainbow(dim(pcaData)[2])
     arrayNames <- as.character(colnames(pcaData))
     cex.circle <- 1.3
-    cex.text <- 0.7
+    cex.text <- 0.6
     tcol <- "#444444"
 
     png(file = paste("PCAplot_",baseName,".png",sep=""), width=1200+(!namesInPlot)*400, height=1200, pointsiz=25)
@@ -586,13 +608,14 @@ CreateMAplots <- function(first=NULL, second=NULL, third=NULL, fourth=NULL, labe
 #################################
 
 CreateDensityPlots <- function(x, name=NULL) {
-  if(is.list(x)) {
+  if(is.list(x) && !class(x) %in% c("RGList", "EListRaw", "MAList")) {
     name <- names(x)
     x <- x[[1]]
+    # If maximum value of x > 1.000 then the data needs to be log transformed.
   }
   if((!class(x) %in% c("RGList","EListRaw","MAList")) & (!is.matrix(x))) stop("Only object of class RGList, EListRaw, MAList, or matrix can be handled")
   if(is.null(name)) stop("The \"name\" parameter must be provided\n")
-
+  
   # Preparation of the number of pages needed
   maxArrays <- ncol(x)
   npages <- ceiling(maxArrays/9)
@@ -767,7 +790,7 @@ PlotDensities <- function (x, position, outputName=NULL, name=NULL) {
       x.max.fg <- ceiling(max(sapply(apply(corr.foreground, 2, density, na.rm=TRUE), function(z) max(z$x))))
       y.min.fg <- 0
       y.max.fg <- ceiling(max(sapply(apply(corr.foreground, 2, density, na.rm=TRUE), function(z) max(z$y))))
-     if(class(x) == "list") { lab.title <- paste(names(x), " Foreground Signal Distribution") } else { lab.title <- "BG Corrected Foreground Signal Distribution") }
+     if(class(x) == "list") { lab.title <- paste(names(x), " Foreground Signal Distribution") } else { lab.title <- "BG Corrected Foreground Signal Distribution" }
       plotDensity(as.matrix(corr.foreground[,selection]), col=color, lty=1:length(selection), lwd=2, xlim=c(x.min.fg,x.max.fg), ylim=c(y.min.fg,y.max.fg), main=lab.title, xlab=paste("Log2(Intensity) -",name), ylab="Density")
     }
   }
@@ -1002,6 +1025,51 @@ boxplotOverview2color <- function (class1=NULL, class2=NULL, class3=NULL, class4
 ######################################
 ##  boxplotOverview1color function  ##
 ######################################
+boxplotOverview.1color <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, use.weights=FALSE, weights=NULL) {
+  ## This function assumes that x is a list coming from arrayQC consisting of four data matrices.
+  error <- NULL
+  if(use.weights) { tempTitle <- "(FILTERED)" } else { tempTitle <- "(ALL)" }
+  ## Check fileName
+  if(is.null(fileName)) { fileName <- "BoxplotOverview.png" }
+
+  if(!is.null(figTitles)) { 
+    if( length(figTitles) != length(x) ) { 
+      error <- c(error, "- figTitles: data object size does not correspond with figure title length") 
+    } else {
+      figTitles <- paste( figTitles, rep(tempTitle, length(x)) )
+      figTitles <- gsub("."," + ", figTitles, fixed=TRUE)
+    }
+  } else {
+    ## Creating Figure Titles if none are supplied
+    figTitles <- paste( names(x), rep(tempTitle, length(x)) )
+    figTitles <- gsub("."," + ", figTitles, fixed=TRUE)
+  }
+  if(is.list(x)) {  
+    if(length(x) != 4) { error <- c(error, "- x: object is a list with more or less than 4 data fields") }
+    temp <- as.vector(lapply(x, class))
+    if(sum(temp!="matrix") > 0) { error <- c(error, "- All elements of the list must be of the matrix class.") }
+    rm(temp)
+  } else {
+    error <- c(error, "- x: object is not a list") 
+  }
+
+  if(!is.null(error)) { stop(paste("[WARNING] The following error(s) occurred:\n", paste(error, collapse="\n"), "\n\nPlease adress the above issues!\n")) }
+
+  ## Image legend will support up to 65 sample names per row. If more samples are present, the image needs to widen up.
+  legendTemp <- floor( dim(x[[2]])[2] / 65 )
+  cex.axis <- 1 - (legendTemp * 0.125)
+  png(file=paste(fileName, ".png", sep=""), width=1600+(800 * legendTemp), height=1200, pointsize=20)
+    image.layout <- rbind( c(1,1,2,2,5), c(3,3,4,4,5) )
+    layout(image.layout)
+    for(i in 1:length(x)) {
+      boxplot(x[[i]], names=c(1:dim(x[[i]])[2]), ylim=c(0, 20), main=figTitles[i], cex.axis=cex.axis, las=2)
+    }
+    plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab="", bty='n')
+    legend("topright", paste( c(1:dim(x[[1]])[2]), ": ", colnames(x[[1]]), sep=""), ncol=(legendTemp + 1), box.lwd = 0,box.col = "white",bg = "white")
+  dev.off()
+
+}
+
 
 boxplotOverview1color <- function (class1=NULL, class2=NULL, class3=NULL, class4=NULL, fileName=NULL, figTitles=NULL, use.col=NULL, non.zero.weight=FALSE, weights=NULL) {
   select <- c(!is.null(class1),!is.null(class2),!is.null(class3),!is.null(class4))
