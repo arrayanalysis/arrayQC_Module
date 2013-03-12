@@ -1,3 +1,18 @@
+## v1.3.1
+# Jan - Mar 2013 (Stan)
+# Changes below were made to support web module:
+# - Converted individual MA objects into a single MA list.
+# -- Each list now contains the results of each normalization method
+# -- run_arrayQC.R code was adjusted accordingly (and obsolete code was removed)
+# -- If two colour data is used, each element of this list will be an MA-list
+# -- If single colour data is used, each element of this list will be a matrix
+# -- Majority of functions were re-written to be compatible with these lists.
+# - IF-statement added to each plot subtype. Variables to trigger these plots were included to arrayQC.R.
+# -- Change was necessary to implement webservice into the current pipeline. 
+# - Added different variables that can be set through the webservice, but not needed for the
+#   local version (i.e. cluster.method, cluster.distance, ... ). The local version will automatically
+#   generate these variables if they do not exist and will assign default values to them.
+
 ## v1.2.4:
 # 13-11-2012 Stan:
 # - Renamed normalized objects to MA[[<normalization method>]].
