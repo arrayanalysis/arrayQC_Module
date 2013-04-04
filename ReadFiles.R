@@ -419,6 +419,8 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
   ## Actually, this needs to be done on the limma version, but I have no idea which version this would be...
   ver    <- as.character(R.version["minor"])
   subver <- strsplit(ver, ".", fixed=TRUE)[[1]][1]
+  ## 04/04/2013 - R3.0 has released!
+  majorVer <- as.character(R.version["major"])
 
 ## Redoing the read-part:
 ## - Read in the first xxx lines
@@ -512,7 +514,7 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
     }
   }
   cat(" * Reading microarray text files ...\n");
-  if(subver > 10) {
+  if(subver > 10 || majorVer >= 3) {
     x <- read.maimages(targets$FileName, source=source, path=data.path, green.only=ifelse(channels==1, TRUE, FALSE), columns=columns, other.columns=other, annotation=annotation)
   } else {
     x <- read.maimages(targets$FileName, source=source, path=data.path, channels=channels, columns=columns, other.columns=other, annotation=annotation)
