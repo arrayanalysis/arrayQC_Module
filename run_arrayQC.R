@@ -316,7 +316,7 @@ if(plotClust == 1) {
     for(i in 1:length(MA2)) {
       switch(names(MA2)[i], "BGCORRECTED" = {
         addTitle <- "BGCorrected Data)"
-      }, addTitle <- paste(names(MA2)[i], "Normalized Data") })
+      }, { addTitle <- paste(names(MA2)[i], "Normalized Data") })
       HierarchCluster(MA2[[i]], main=addTitle, dist.method = cluster.distance, clust.method = cluster.method)
       rm(addTitle)
     }
