@@ -508,101 +508,6 @@ CreatePCAplot <- function(data, main=NULL, scaled_pca=TRUE, namesInPlot=FALSE){
     cat("Warning: pca on the",baseName,"data set unsuccessful, possibly due to lack of memory\n\n")
   }
 }
-
-##############################
-## CreateMAplots function   ##
-##############################
-
-CreateMAplots <- function(first=NULL, second=NULL, third=NULL, fourth=NULL, labels=NULL, postfix=NULL, image.width=1600, image.height=1200, pointsize=25) {
-  cat("* Preprocessing MA Plots ...")
-  # Check if the user passed in the correct arguments
-  which.norm <- !c(is.null(first),is.null(second),is.null(third),is.null(fourth))
-  if(sum(which.norm) == 0) stop("At least one data object - MAList or matrix - has to be provided")
-  which.class <- c(class(first),class(second),class(third),class(fourth))
-  if(sum(which.class == "MAList") < sum(which.norm)) stop("only data objects of class MAList can be provided")
-  if(length(labels) != sum(which.norm)) stop("The number of data object and labels to describe the type of normalization has to be equal")
-  
-  # Create subtexts for the graphs 
-  subtexts1 <- paste(labels, " - Non-zero-weighted points (filtered)", sep="")
-  subtexts2 <- paste(labels, " - All Points (not filtered)", sep="")
-
-  #Create identifier for the normalization objects used
-  objects <- c("first","second","third","fourth")[which.norm]
-
-  #determine x and y limits and check whether objects have a weight field
-  xlim <- c(0,0)
-  ylim <- c(0,0)
-  plot.weighted <- rep(FALSE, length(objects))
-  for (j in 1:length(objects)) {
-    rng <- range(as.matrix(get(objects[j])$A), na.rm=TRUE)
-    if (rng[1] < xlim[1]) xlim[1] <- rng[1]
-    if (rng[2] > xlim[2]) xlim[2] <- rng[2]
-    rng <- range(as.matrix(get(objects[j])$M), na.rm=TRUE)
-    if (rng[1] < ylim[1]) ylim[1] <- rng[1]
-    if (rng[2] > ylim[2]) ylim[2] <- rng[2]
-    if(!is.null(get(objects[j])$weights)) plot.weighted[j] <- TRUE
-  }
-  
-  #plotting
-  maxArrays <- ncol(get(objects[which.norm][1]))
-  cat("  ok.\n* MA plotting progress:\n")
-  pbar <- txtProgressBar(min=0, max=maxArrays, char="*", width=20, style=3)
-
-  for (i in 1:maxArrays) {
-    titleName <- colnames(get(objects[which.norm][1]))[i]
-    
-    if(sum(plot.weighted) > 0) {
-      fileName = paste("MA_Plots_-_", titleName, "_-_Zero_Weighted", postfix, ".png", sep="", collapse=NULL)
-      png(filename = fileName, width=image.width, height=image.height, pointsize=pointsize)
-      par(mar=c(8,4,4,3)+0.1, mfrow=c(1+(sum(which.norm) > 1),1+(sum(which.norm) > 2)))
-      
-      # Plot a MA.Plot (Zero-weighted) only when the normalization method is present in the which.norm vector and weights are present
-      for (j in 1:length(objects)) {
-        if(plot.weighted[j]) {
-          # Putting A and M values in a matrix. Setting zero-weighted M-values to NA before plotting
-          a <- as.matrix(get(objects[j])$A)[,i]
-          m <- as.matrix(get(objects[j])$M)[,i]
-          w <- as.matrix(get(objects[j])$weights)[,i]
-          k <- is.na(w) | (w <= 0)
-          m[k] <- NA
-          
-          #Determining color densities and plotting the MA-plot
-          color <- densCols((get(objects[j])$A[,i]), (get(objects[j])$M[,i]))
-          plot(a, m, xlim=xlim, ylim=ylim, col=color, cex=0.3, pch=16, xlab="A", ylab="M")
-          title(main=titleName, sub=subtexts1[j], outer=FALSE)
-          abline(0,0,col="blue")
-        } else {
-          cat(paste("Not plotting MA-Plot excluding zero-weighted spots for", deparse(substitute(get(objects[j]))), "- Reason: no weights available for this data object \n"))
-          plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab="", bty='n')
-        }
-      }
-      dev.off()
-    }
-    
-    fileName = paste("MA_Plots_-_", titleName,"_-_All_Points", postfix, ".png", sep="", collapse=NULL)
-    png(filename = fileName, width=1600, height=1200, pointsize=20)
-    par(mar=c(8,4,4,3)+0.1, mfrow=c(1+(sum(which.norm) > 1),1+(sum(which.norm) > 2)))
-    
-    # Plot a MA.Plot (all points) only when the normalization method is present in the which.norm vector    
-    for (j in 1:length(objects)) {
-      # Putting A and M values in a matrix, to be consistent with the method in the zero-weighted plots 
-      a <- as.matrix(get(objects[j])$A)[,i]
-      m <- as.matrix(get(objects[j])$M)[,i]
-      
-      #Determining color densities and plotting the MA-plot
-      color <- densCols((get(objects[j])$A[,i]), (get(objects[j])$M[,i]))
-      plot(a, m, xlim=xlim, ylim=ylim, col=color, cex=0.3, pch=16, xlab="A", ylab="M")
-      title(main=titleName, sub=subtexts2[j], outer=FALSE)
-      abline(0,0,col="blue")
-    }  
-    dev.off()
-    setTxtProgressBar(pbar, i)
-    
-    if(i == maxArrays) {cat("\n")}
-  }
-}
-
-
 #################################
 ## CreateDensityPlots function ##
 #################################
@@ -746,7 +651,7 @@ PlotDensities <- function (x, position, outputName=NULL, name=NULL) {
     }
   }
 
-  png(file=outputName, width=1600, height=600+600*(is.null(corr.foreground)), pointsize=20)
+  png(file=outputName, width=1200, height=600+600*(is.null(corr.foreground)), pointsize=20)
   
   if(class(x) == "RGList" || class(x) == "EListRaw") {
     par(mfrow=c(2,2))
@@ -784,7 +689,7 @@ PlotDensities <- function (x, position, outputName=NULL, name=NULL) {
       plotDensity(as.matrix(background[,selection]), col=color, xlim=c(x.min.bg,x.max.bg), lty=1:length(selection), lwd=2, ylim=c(y.min.bg,y.max.bg),main=main.title, xlab=paste("Log2(Intensity) -",name), ylab="Density")
     }
   } else {
-    par(mfrow=c(1,2))
+    layout( t(as.matrix(c(1,1,2)) ) )
     if(!is.null(corr.foreground)) {
       x.min.fg <- 0
       x.max.fg <- ceiling(max(sapply(apply(corr.foreground, 2, density, na.rm=TRUE), function(z) max(z$x))))
@@ -803,135 +708,6 @@ PlotDensities <- function (x, position, outputName=NULL, name=NULL) {
   dev.off()
 }
 
-###################################
-##    CreateBoxplot function     ##
-###################################
-
-## class1 contains the actual data you want to visualise (e.g. Agilent.RG, Agilent.MA.LOESS, etc)
-
-CreateBoxplot <- function(class1, fileName, figTitle, y.axis="M", use.col=NULL, y.lim=NULL, non.zero.weight=FALSE, weights=NULL) {
-  
-  if((!class(class1) %in% c("RGList","EListRaw","MAList")) & (!is.matrix(class1))) stop("Only object of class RGList, EListRaw, MAList, or matrix can be handled")
-  
-  if(non.zero.weight == TRUE) { 
-    a <- naZeroWeights(class1, weights=weights)
-    suffix <- c("_High_Quality_Only")
-  } else { 
-    a <- class1 
-    suffix <- c("_All_Reporters")
-  }
-  columnName <- colnames(class1)
-  longest.filename <- max(nchar(colnames(class1)))
-  
-  if(class(class1)=="RGList" || class(class1)=="EListRaw") {
-    if(class(class1)=="RGList") {
-      a$R <- log(a$R,2)
-      a$G <- log(a$G,2)
-      ylim.min <- min(a$R, a$G, na.rm=TRUE)
-      ylim.max <- max(a$R, a$G, na.rm=TRUE)
-    } else {
-      if(class1$datatype=="red") {
-        a$R <- log(a$E,2)
-        ylim.min <- min(a$R, na.rm=TRUE)
-        ylim.max <- max(a$R, na.rm=TRUE)
-      } else {
-        a$G <- log(a$E,2)
-        ylim.min <- min(a$G, na.rm=TRUE)
-        ylim.max <- max(a$G, na.rm=TRUE)
-      }
-    }
-    if(class1$datatype!="green") {
-      fileName2 <- paste(fileName,"_Raw_Red_Signal", suffix, ".png", sep="")
-      FigTitle2 <- paste(figTitle," Raw Red Signal", suffix, ".png", sep="")
-      png(filename=fileName2, width=1600, height=1200, pointsize=20)
-      par(mar = c(longest.filename/1.75,4,4,3)+0.1, las=2)
-      if(dim(class1)[2] >= 100)
-        par(cex.axis=0.7)
-      else
-        par(cex.axis=0.8)
-      boxplot(as.data.frame(a$R), names=rep("",length(columnName)), ylim=c(ylim.min,ylim.max), ylab = "M", col=use.col)
-      title(main=FigTitle2, cex.main=0.9, col.main="blue", font.main=4)
-      axis(1,at=1:length(columnName),labels=columnName)
-      abline(0,0,col="blue")
-      dev.off()
-    }
-    if(class1$datatype!="red") {
-      fileName2 <- paste(fileName,"_Raw_Green_Signal", suffix, ".png", sep="")
-      FigTitle2 <- paste(figTitle," Raw Green Signal", suffix, ".png", sep="")
-      png(filename=fileName2, width=1600, height=1200, pointsize=20)
-      par(mar = c(longest.filename/1.75,4,4,3)+0.1, las=2)
-      if(dim(class1)[2] >= 100)
-        par(cex.axis=0.7)
-      else
-        par(cex.axis=0.8)
-      boxplot(as.data.frame(a$G), names=rep("",length(columnName)), ylim=c(ylim.min,ylim.max), ylab = "M", col=use.col)
-      title(main=FigTitle2, cex.main=0.9, col.main="blue", font.main=4)
-      axis(1,at=1:length(columnName),labels=columnName)
-      abline(0,0,col="blue")
-      dev.off()
-      }
-  } else {
-    if(class(class1)=="MAList") {
-      if(class1$datatype=="both") {
-        if(y.axis == "M") { 
-          fileName <- paste(fileName, "_M", suffix, ".png", sep="") 
-  #         Plot.This <- a$M~col(as.matrix(a$M))
-          Plot.This <- as.data.frame(a$M)
-          y.lab <- "M"
-          lheight <- 0
-          if(is.null(y.lim)) {  y.lim <- c(-15,15) }
-        }
-        if(y.axis == "A") { 
-          fileName <- paste(fileName,"_A", suffix, ".png", sep="") 
-  #         Plot.This <- a$A~col(a$A)
-          Plot.This <- as.data.frame(a$A)
-          y.lab <- "A"
-          lheight <- mean(a$A,na.rm=TRUE)
-          if(is.null(y.lim)) { y.lim <- c(-10,25) }
-        }
-      } else {
-          fileName <- paste(fileName, "_EST", suffix, ".png", sep="") 
-  #         Plot.This <- a$other$EST~col(as.matrix(a$other$EST))
-          Plot.This <- as.data.frame(a$other$EST)
-          lheight <- mean(a$other$EST,na.rm=TRUE)
-          y.lab <- "estimated expression"
-          if(is.null(y.lim)) { y.lim <- c(-10,25) }
-      }
-      png(filename=fileName, width=1600, height=1200, pointsize=20)
-      par(mar=c(longest.filename/2.1,4,4,3)+0.1, las=2)
-      if(dim(class1)[2] >= 100)
-        par(cex.axis=0.7)
-      else
-        par(cex.axis=0.8)
-      boxplot(Plot.This, names=rep("",length(columnName)), ylab = y.lab, cex.axis=0.8, ylim=y.lim, col=use.col)
-      title(main=figTitle, cex.main=0.9, col.main="blue", font.main=4)
-      axis(1,at=1:length(columnName),labels=columnName)
-      abline(lheight, 0, col="blue", lty=2)
-      dev.off()
-    } else {
-      if(class(class1)=="matrix") {
-        fileName <- paste(fileName, "_EST", suffix, ".png", sep="") 
-  #     Plot.This <- a~col(as.matrix(a))
-        Plot.This <- as.data.frame(a)
-        lheight <- mean(a,na.rm=TRUE)
-        y.lab <- "estimated expression"
-        if(is.null(y.lim)) { y.lim <- c(-10,25) }
-        png(filename=fileName, width=1600, height=1200, pointsize=20)
-        par(mar=c(longest.filename/2.1,4,4,3)+0.1, las=2)
-        if(dim(class1)[2] >= 100)
-          par(cex.axis=0.7)
-        else
-          par(cex.axis=0.8)
-        boxplot(Plot.This, names=rep("",length(columnName)), ylab = y.lab, cex.axis=0.8, ylim=y.lim, col=use.col)
-        title(main=figTitle, cex.main=0.9, col.main="blue", font.main=4)
-        axis(1,at=1:length(columnName),labels=columnName)
-        abline(lheight, 0, col="blue", lty=2)
-        dev.off()
-      }
-    }
-  } 
-}
-
 ################################
 ##  naZeroWeights function    ##
 ################################
@@ -942,24 +718,27 @@ CreateBoxplot <- function(class1, fileName, figTitle, y.axis="M", use.col=NULL, 
 
 naZeroWeights <- function(x, weights=NULL) {
   if(class(x) != "matrix")
-    if(is.null(x$weights))
-      stop("for RGList or MAList objects a weights field must be present")
+    if(is.null(weights))
+      stop("Please provide a weights matrix")
+    if(dim(x)[2] != dim(weights)[2] | dim(x)[1] != dim(weights)[1] )
+      stop("Object dimension and weight matrix dimensions do not match!")
+
   for(i in 1:ncol(x)) {
     switch(class(x),
       RGList = {
-        zeros <- which(x[,i]$weights == 0)
+        zeros <- which(weights[,i] == 0)
         x$R[zeros,i] <- NA
         x$G[zeros,i] <- NA
         x$Rb[zeros,i] <- NA
         x$Gb[zeros,i] <- NA
       },
       EListRaw = {
-        zeros <- which(x[,i]$weights == 0)
+        zeros <- which(weights[,i] == 0)
         x$E[zeros,i] <- NA
         x$Eb[zeros,i] <- NA
       },
       MAList = {
-        zeros <- which(x[,i]$weights == 0)
+        zeros <- which(weights[,i] == 0)
         x$M[zeros,i] <- NA
         x$A[zeros,i] <- NA
         if(!is.null(x$other$EST)) x$other$EST[zeros,i] <- NA
@@ -975,62 +754,34 @@ naZeroWeights <- function(x, weights=NULL) {
 }
 
 ######################################
-##  boxplotOverview2color function  ##
+##  boxplotOverview function  ##
 ######################################
 
-boxplotOverview2color <- function (class1=NULL, class2=NULL, class3=NULL, class4=NULL, fileName=NULL, figTitles=NULL, y.axis="M", use.col=NULL, non.zero.weight=FALSE) {
-  select <- c(!is.null(class1),!is.null(class2),!is.null(class3),!is.null(class4))
-  if(sum(select) < 2) stop(cat("Minimum 2 classes need to be used up until four classes maximum"))
-
-  if(sum(select) != length(figTitles)) stop("The same number of data objects and figure titles must be specified")
-  
-  objects <- c("class1", "class2", "class3", "class4")[select]
-  
-  classes <- NULL
-  for (i in  objects) classes <- c(classes, class(get(i)))
-  if(sum(classes!="MAList") > 0) stop("All arguments must be of type MAList")
-  
-  datatypes <- NULL
-  for (i in objects) datatypes <- c(datatypes, get(i)$datatype)
-  if(sum(datatypes!="both") > 0) stop("All arguments must be two-channel MALists")
-  
-  if(non.zero.weight)
-    for(i in objects) assign(i, naZeroWeights(get(i)))
-  
-  png(file=paste(fileName, ".png", sep=""), width=1600, height=1200, pointsize=20)
-  par(mfrow=c(2,1+(sum(select) > 2)))
-  
-  for(i in 1:length(objects)) {
-    object <- get(objects[i])
-    if(y.axis == "M") {
-#     boxplot(object$M~col(as.matrix(object$M)), main=figTitles[i], ylim=c(-10,10), ylab="M", col=use.col)
-      data2plot <- as.data.frame(object$M)
-      #names will not fit on these combined plots, so remove them
-      names(data2plot) <- NULL
-      boxplot(data2plot, main=figTitles[i], ylim=c(-10,10), ylab="M", col=use.col)
-      abline(0, 0, col="blue", lty=2)
-    }
-    if(y.axis == "A") {
-#     boxplot(object$A~col(as.matrix(object$A)), main=figTitles[i], ylim=c(-10,25), ylab="A", col=use.col)
-      data2plot <- as.data.frame(object$A)
-      #names will not fit on these combined plots, so remove them
-      names(data2plot) <- NULL
-      boxplot(data2plot, main=figTitles[i], ylim=c(-10,25), ylab="A", col=use.col)
-      abline(mean(object$A, na.rm=TRUE), 0, col="blue", lty=2)
-    }
-  }
-  dev.off()
-}
-
-######################################
-##  boxplotOverview1color function  ##
-######################################
-boxplotOverview.1color <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, use.weights=FALSE, weights=NULL) {
-  ## This function assumes that x is a list coming from arrayQC consisting of four data matrices.
+boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, use.weights=FALSE, weights = NULL, max.characters=20, y.axis=NULL, y.lim=NULL) {
+  ## This function assumes that x is a list coming from arrayQC consisting of four or five data matrices / MALists.
   error <- NULL
-  if(use.weights) { tempTitle <- "(FILTERED)" } else { tempTitle <- "(ALL)" }
-  ## Check fileName
-  if(is.null(fileName)) { fileName <- "BoxplotOverview.png" }
+  if(use.weights) { tempTitle <- "[HIGH QUALITY SPOTS ONLY]" } else { tempTitle <- "[ALL]" }
+  if(is.null(fileName)) { fileName <- "BoxplotOverview" }  ## Check fileName
+  
+  ## Check if y-axis is filled in properly (in combination with y.lim)
+  check <- 0
+  if(is.null(y.axis)) { 
+    check <- 1 
+  } else {
+    switch(y.axis, "M" = { 
+     check <- 1
+      fileName <- paste(fileName, "_M", sep="")
+      if(is.null(y.lim)) { y.lim=c(-6, 6) }
+    }, "A" = { 
+      check <- 1
+      fileName <- paste(fileName, "_AverageSignal", sep="") 
+    })
+  }
+  if(check == 0) { error <- c(error, "- y.axis: parameter is not set to NULL, \"M\" or \"A\"") }
+  rm(check)
+
+  if(use.weights == TRUE) { fileName <- paste(fileName, "_weighted", sep="") }
+  if(is.null(y.lim)) { y.lim <- c(0,20) }
 
   if(!is.null(figTitles)) { 
     if( length(figTitles) != length(x) ) { 
@@ -1045,13 +796,33 @@ boxplotOverview.1color <- function(x, fileName=NULL, figTitles=NULL, groupcols=N
     figTitles <- gsub("."," + ", figTitles, fixed=TRUE)
   }
   if(is.list(x)) {  
-    if(length(x) != 4) { error <- c(error, "- x: object is a list with more or less than 4 data fields") }
-    temp <- as.vector(lapply(x, class))
-    if(sum(temp!="matrix") > 0) { error <- c(error, "- All elements of the list must be of the matrix class.") }
-    rm(temp)
+    if(length(x) == 5) { ## Happens for two-color arrays (5 normalizations)
+      normalizations <- c("BGCORRECTED", "LOESS", "LOESS.QUANTILE", "LOESS.AQUANTILE") ## Normalization values
+      ## Check if 4 normalizations are present:
+      if( sum( normalizations %in% names(x) ) != 4 ) { 
+        error <- c(error, "- x: object is a list with 5 elements, but does not contain all recommended normalization results") 
+      } else { ## if everything is correct, make the proper data object:
+        selected <- which( names(x) %in% normalizations == FALSE )
+        x[[selected]] <- NULL
+      }
+    } else { ## Single-channel arrays
+      if(length(x) != 4) { error <- c(error, "- x: object is a list with more or less than 4 data fields") }
+      temp <- as.vector(lapply(x, class))
+      if(sum(temp!="matrix") > 0) { error <- c(error, "- All elements of the list must be of the matrix class.") }
+      rm(temp)
+    }
   } else {
     error <- c(error, "- x: object is not a list") 
   }
+
+  ## Check the maximum characters of the values assigned to the legend:
+  a <- nchar(colnames(x[[1]]))
+  b <- a[] >= max.characters
+  if(sum(b, na.rm=TRUE) > 0) {
+    error <- c(error, paste("- The following sample descriptions are too long ( >= ", max.characters, " characters) :\n", sep=""))
+    error <- c(error, paste("-", a[b], "\n"))
+  }
+
 
   if(!is.null(error)) { stop(paste("[WARNING] The following error(s) occurred:\n", paste(error, collapse="\n"), "\n\nPlease adress the above issues!\n")) }
 
@@ -1062,7 +833,17 @@ boxplotOverview.1color <- function(x, fileName=NULL, figTitles=NULL, groupcols=N
     image.layout <- rbind( c(1,1,2,2,5), c(3,3,4,4,5) )
     layout(image.layout)
     for(i in 1:length(x)) {
-      boxplot(x[[i]], names=c(1:dim(x[[i]])[2]), ylim=c(0, 20), main=figTitles[i], cex.axis=cex.axis, las=2)
+      ## Which value to plot
+      if( use.weights == 1 ) { 
+        if(is.null(weights)) { weights <- x[[i]]$weights }
+        data <- naZeroWeights( x[[i]], weights=weights ) 
+      } else { data <- x[[i]] }
+
+      if( is.null(y.axis) ) { data <- data   } else { 
+        if( y.axis == "M" ) { data <- data$M }
+        if( y.axis == "A" ) { data <- data$A }
+      }
+      boxplot(data, names=c(1:dim(x[[i]])[2]), ylim=y.lim, main=figTitles[i], cex.axis=cex.axis, las=2)
     }
     plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab="", bty='n')
     legend("topright", paste( c(1:dim(x[[1]])[2]), ": ", colnames(x[[1]]), sep=""), ncol=(legendTemp + 1), box.lwd = 0,box.col = "white",bg = "white")
@@ -1071,62 +852,97 @@ boxplotOverview.1color <- function(x, fileName=NULL, figTitles=NULL, groupcols=N
 }
 
 
-boxplotOverview1color <- function (class1=NULL, class2=NULL, class3=NULL, class4=NULL, fileName=NULL, figTitles=NULL, use.col=NULL, non.zero.weight=FALSE, weights=NULL) {
-  select <- c(!is.null(class1),!is.null(class2),!is.null(class3),!is.null(class4))
-  if(sum(select) < 2) stop(cat("Minimum 2 classes need to be used up until four classes maximum"))
-
-  if(sum(select) != length(figTitles)) stop("The same number of data objects and figure titles must be specified")
-
-  objects <- c("class1", "class2", "class3", "class4")[select]
-  
-  classes <- NULL
-  for (i in  objects) classes <- c(classes, class(get(i)))
-  if(sum(classes!="MAList" & classes!="matrix")>0) stop("All arguments must be of type MAList or matrix")
-  
-  datatypes <- NULL
-  for (i in objects[classes == "MAList"]) datatypes <- c(datatypes, get(i)$datatype)
-  if(sum(datatypes=="both") > 0) stop("All arguments must be one-channel MALists or matrices")
-
-  if(non.zero.weight) { 
-    if((sum(classes=="MAList") == 0) & is.null(weights)) stop("when only matrix objects are provided (e.g. between normalization objects) weights must be provided")
-    if((sum(classes=="MAList") > 0) & !is.null(weights)) cat("WARNING: weights provided will only be used for matrix objects, not for MALists \n")
-    if((sum(classes=="MAList") > 0) & is.null(weights)) {
-      cat("WARNING: no weights provided for matrix object, these will be taken from the first MAList object with weights \n")
-      for (i in objects[classes == "MAList"])
-        if(is.null(weights) & !is.null(get(i)$weights))
-          weights <- get(i)$weights
-    }
-    for(i in objects) assign(i, naZeroWeights(get(i), weights))
-    # note that in this call the weights parameter will be ignored for MAList objects
+##############################
+## CreateMAplots function   ##
+##############################
+createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=1600, image.height=1200, pointsize=25, y.lim=NULL, x.lim=NULL) {
+  cat("* Preprocessing MA Plots ...")
+  error <- NULL
+  if( class(x) != "list" ) { error <- c(error, "- object x is not a list class!") }
+  ## Check if each component of x is an MAlist
+  for(i in 1:length(x)) {
+    if(class(x[[i]]) != "MAList") { error <- c(error, paste("- Element ", names(x)[i], " is not of MAList class!", sep="")) }
   }
+  ## Only allow lists with 2 or 5 elements (single channel vs dual channel only).
+  if(! (length(x) == 2 | length(x) == 5) ) { error <- c(error, "- lists must consist of 2 or 5 elements!") }
+  ## If 5 elements are supplied, extract only the more usefull normalizations:
+  if(length(x) == 5) {
+    normalizations <- c("BGCORRECTED", "LOESS", "LOESS.QUANTILE", "LOESS.AQUANTILE") ## Normalization values
+    ## Check if 4 normalizations are present:
+    if( sum( normalizations %in% names(x) ) != 4 ) { 
+      error <- c(error, "- x: object is a list with 5 elements, but does not contain all recommended normalization results") 
+    } else { ## if everything is correct, make the proper data object:
+      selected <- which( names(x) %in% normalizations == FALSE )
+      x[[selected]] <- NULL
+    }
+  }
+
+  ## Check if labels exist
+  if(is.null(lab)) { lab <- names(x) }
+  if(sum( lab %in% names(x) ) != length(lab) ) { error <- c(error, "- label names do not match names of object x!") }
+
   
-  png(file=paste(fileName, ".png", sep=""), width=1600, height=1200, pointsize=20)
-  par(mfrow=c(2,1+(sum(select) > 2)))
+  subtext1 <- paste( lab, " - High quality spots (filtered)", sep="")
+  subtext2 <- paste( lab, " - All spots (not filtered)", sep="")
   
-  for (i in 1:length(objects)) {
-    object <- get(objects[i])
-    if (class(object) == "MAList") {
-#     boxplot(object$other$EST~col(as.matrix(object$other$EST)), main=figTitles[i], ylim=c(-10,25), ylab="estimated intensity", col=use.col)
-      data2plot <- as.data.frame(object$other$EST)
-      #names will not fit on these combined plots, so remove them
-      names(data2plot) <- NULL
-      boxplot(data2plot, main=figTitles[i], ylim=c(-10,25), ylab="estimated intensity", col=use.col)
-      abline(mean(object$other$EST, na.rm=TRUE), 0, col="blue", lty=2)
-    } else {
-      if (class(object) == "matrix") {
-#       boxplot(object~col(as.matrix(object)), main=figTitles[i], ylim=c(-10,25), ylab="estimated intensity", col=use.col)
-        data2plot <- as.data.frame(object)
-        #names will not fit on these combined plots, so remove them
-        names(data2plot) <- NULL
-        boxplot(data2plot, main=figTitles[i], ylim=c(-10,25), ylab="estimated intensity", col=use.col)
-        abline(mean(object, na.rm=TRUE), 0, col="blue", lty=2)
-      } else {
-        stop("all objects must be of data type 'MAList' or 'matrix'")
+  ## Determine x and y limits (based on full experiment) and check whether objects have a weight field
+
+  tempM <- tempA <- NULL
+  for(i in 1:length(x)) {
+    tempM <- c( tempM, range(x[[i]]$M, na.rm=TRUE) )
+    tempA <- c( tempA, range(x[[i]]$A, na.rm=TRUE) )
+  }
+  if(is.null(x.lim)) { x.lim <- c( min( floor(tempA) ) - 1, max( ceiling(tempA) ) + 1 ) }
+  if(is.null(y.lim)) { y.lim <- c( min( floor(tempM) ) - 1, max( ceiling(tempM) ) + 1 ) }
+
+  cat("  ok.\n* MA plotting progress:\n")
+  #### PLOTTING
+  #############
+  maxArrays <- ncol(x[[1]])
+  pbar <- txtProgressBar(min=0, max=maxArrays, char="*", width=20, style=3)
+  for(i in 1:maxArrays) {
+    ### WEIGHTED PLOT
+    if(!is.null(weights)) {
+      titleName <- colnames(x[[1]])[i]
+      fileName <- paste("MA_Plots_-_", titleName, "_-_Zero_Weighted", postfix, ".png", sep="", collapse=NULL)
+      png(filename = fileName, width=image.width, height=image.height, pointsize=pointsize)
+      par( mar=c(8,4,4,3)+0.1, mfrow=c(1+ (length(x) == 2 | length(x) == 4), 1+ ( length(x) == 4)) )
+      for(j in 1:length(x)) {
+        m <- x[[j]]$M[,i]
+        a <- x[[j]]$A[,i]
+        w <- weight[,i]
+        k <- is.na(w) | (w <= 0) 
+        m[k] <- NA
+        a[k] <- NA
+        #Determining color densities and plotting the MA-plot
+        color <- densCols(a, m)
+        plot(a, m, xlim=x.lim, ylim=y.lim, col=color, cex=0.3, pch=16, xlab="A", ylab="M")
+        title(main=titleName, sub=subtext1[j], outer=FALSE)
+        abline(0,0,col="darkgrey", lty=2)
       }
+      dev.off()
     }
-  }
-  dev.off()
+    ### NORMAL PLOT
+    titleName <- colnames(x[[1]])[i]
+    fileName <- paste("MA_Plots_-_", titleName,"_-_All_Points",postfix,".png", sep="", collapse=NULL)
+    png(filename = fileName, width=image.width, height=image.height, pointsize=pointsize)
+    par( mar=c(8,4,4,3)+0.1, mfrow=c(1+ (length(x) == 2 | length(x) == 4), 1+ ( length(x) == 4)) )
+    for(j in 1:length(x)) {
+      m <- x[[j]]$M[,i]
+      a <- x[[j]]$A[,i]
+      #Determining color densities and plotting the MA-plot
+      color <- densCols(a, m)
+      plot(a, m, xlim=x.lim, ylim=y.lim, col=color, cex=0.3, pch=16, xlab="A", ylab="M")
+      title(main=titleName, sub=subtext2[j], outer=FALSE)
+      abline(0,0,col="darkgrey", lty=2)
+    }
+    dev.off()
+    setTxtProgressBar(pbar, i)
+    if(i == maxArrays) {cat("\n")}
+  }      
 }
+
+
 
 ###########################################
 ##     END OF CREATEQCPLOTS SCRIPT       ##

@@ -8,7 +8,10 @@
 
 ## Enter the directories to be used, use forward slashes (/) or double backward slashed (\\) as separator
 #  and end with a forward slash
-datapath  <- "/home/stan/Desktop/PipelinePaper/set3/"
+#datapath  <- "/home/stan/Desktop/PipelinePaper/set3/"
+
+datapath  <- "/home/stan/Desktop/test/EGM_KRETA_26_02_2013/"
+
 arrayQC.scriptpath <- "/home/stan/Desktop/SVN/r-packages/arrayQC/dev/"
 # scriptpath <- "http://svn.bigcat.unimaas.nl/r-packages/arrayQC/dev/"
 
@@ -43,7 +46,7 @@ controlType.value <- NULL
 ## Variables that are set to run the script. Only when arrayQC.mode is set to "local"
 ## Nog even over nadenken hoe dit wordt aangepast door de webservice...
 #if(arrayQC.mode == "local") {
-  plotVirtualImages <- TRUE
+  plotVirtualImages <- FALSE
   plotBoxplot <- TRUE
   plotHeatmap <- TRUE
   plotClust <- TRUE
