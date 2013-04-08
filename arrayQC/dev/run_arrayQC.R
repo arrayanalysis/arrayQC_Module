@@ -233,7 +233,7 @@ if(RG$datatype == "both") {
                    "green" = { MA[["LOESS"]]$other$EST <- MA[["LOESS"]]$A - MA[["LOESS"]]$M/2 })
 
   MA2[["BGCORRECTED"]] <- MA[["BGCORRECTED"]]$other$EST
-  MA2[["LOESS"]] <- MA[["BGCORRECTED"]]$other$EST
+  MA2[["LOESS"]] <- MA[["LOESS"]]$other$EST
   MA2[["SCALED"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="scale")
   MA2[["QUANTILE"]] <- normalizeBetweenArrays(MA[["BGCORRECTED"]]$other$EST, method="quantile")
   rm(RG2)
@@ -305,6 +305,7 @@ if(plotClust == 1) {
   cat("*------------\n| Clustering\n*------------\n")
   ## Cluster plots - by default: cluster.distance="euclidean", cluster.method="ward". Can be changed by other methods available in ?hdist and ?hclust
   if(RG$datatype=="both") {
+
     for(i in 1:length(MA)) {
       switch(names(MA)[i], "RAW" = { ######### NEED TO CHECK IF THIS IS STILL VALID!!!
          addTitle <- "RAW Data"
@@ -334,7 +335,7 @@ if(plotCor == 1) {
   }, "red" = {
     CreateCorplot(RG, which.channel="E", data.type="RAW_Red_data")
   })
-  if(datatype == "both") {
+  if(datatype == "two-channel") {
     for(i in 1:length(MA)) {
       CreateCorplot(MA[i], which.channel="M")
       CreateCorplot(MA[i], which.channel="A")
@@ -350,11 +351,12 @@ if(plotCor == 1) {
 }
 
 ## Heatmaps
-cat("*------------\n| Heatmaps \n*------------\n")
 if(plotHeatmap == 1) {
+  cat("*------------\n| Heatmaps \n*------------\n")
   for(i in 1:length(MA)) {
     CreateHeatMap(MA[i])
   }
+  cat("\nstatus: OK\n\n")
 }
 
 
@@ -387,64 +389,26 @@ if(plotDensity == 1) {
 
 if(plotBoxplot == 1) {
   cat("*------------\n| Boxplots\n*------------\n")
-  boxplotOverview
+  switch(datatype, "two-channel" = {
+    boxplotOverview(MA, use.weights=TRUE, y.axis="M")
+    boxplotOverview(MA, use.weights=TRUE, y.axis="A")
+    boxplotOverview(MA, use.weights=FALSE, y.axis="M")
+    boxplotOverview(MA, use.weights=FALSE, y.axis="A")
+  }, {
+    if(!is.null(MA[[1]]$weights)) { boxplotOverview(MA2, use.weights=TRUE, weights=MA[[1]]$weights, y.axis=NULL) }
+    boxplotOverview(MA2, use.weights=FALSE)
+  })
+}
+if(plotMvA == 1) {
+  cat("*------------\n| MvA plots\n*------------\n")
+  createMAplots(MA, weight=MA[["BGCORRECTED"]]$weights) ## For single-channel arrays no MA plots can be made for quantile and scaled normalization, because this was based on intensities.
 }
 
 
+normMethods <- matrix(data=NA, ncol=3, nrow=5, dimnames=list("methods"=c("bgcorrected","loess","quantile","aquantile","scaled"), "datatype"=c("red","green","two-channel")))
+normMethods[,1] <- normMethods[,2] <- c("BGCORRECTED", "LOESS", "QUANTILE", NA, "SCALED")
+normMethods[,3] <- c("BGCORRECTED", "LOESS", "LOESS.QUANTILE", "LOESS.AQUANTILE", "LOESS.SCALED")
 
-
-## Boxplots
-cat("*------------\n| Boxplots\n*------------\n")
-if(RG$datatype=="both") {
-  CreateBoxplot(MA.RAW.W, "Boxplots_Before_Normalization", "Unweighted BoxPlots Before Normalization (ALL)", non.zero.weight=FALSE)
-  CreateBoxplot(MA.LOESS.W, "Boxplots_LOESS_Normalization", "Unweighted BoxPlots After LOESS Normalization (ALL)", non.zero.weight=FALSE)
-  CreateBoxplot(MA.LOESS.SCALED.W, "Boxplots_LOESS_Normalization_And_Scaled", "Unweighted BoxPlots After LOESS + SCALED (ALL)", non.zero.weight=FALSE)
-  CreateBoxplot(MA.LOESS.QUANTILE.W, "Boxplots_LOESS_Normalization_And_Quantile", "Unweighted BoxPlots After LOESS + QUANTILE (ALL)", non.zero.weight=FALSE)
-  CreateBoxplot(MA.LOESS.AQUANTILE.W, "Boxplots_LOESS_Normalization_And_AQuantile", "Unweighted BoxPlots After LOESS + AQUANTILE (ALL)", non.zero.weight=FALSE)
-  if(!is.null(MA.RAW.W$weights))
-    CreateBoxplot(MA.RAW.W, "Boxplots_Before_Normalization", "Weighted BoxPlots Before Normalization (FILTERED)", non.zero.weight=TRUE)
-  if(!is.null(MA.LOESS.W$weights))
-    CreateBoxplot(MA.LOESS.W, "Boxplots_LOESS_Normalization", "Weighted BoxPlots After LOESS Normalization (FILTERED)", non.zero.weight=TRUE)
-  if(!is.null(MA.LOESS.SCALED.W$weights))
-    CreateBoxplot(MA.LOESS.SCALED.W, "Boxplots_LOESS_Normalization_And_Scaled", "Weighted BoxPlots After LOESS + SCALED (FILTERED)", non.zero.weight=TRUE)
-  if(!is.null(MA.LOESS.QUANTILE.W$weights))
-    CreateBoxplot(MA.LOESS.QUANTILE.W, "Boxplots_LOESS_Normalization_And_Quantile", "Weighted BoxPlots After LOESS + QUANTILE (FILTERED)", non.zero.weight=TRUE)
-  if(!is.null(MA.LOESS.AQUANTILE.W$weights))
-    CreateBoxplot(MA.LOESS.AQUANTILE.W, "Boxplots_LOESS_Normalization_And_AQuantile", "Weighted BoxPlots After LOESS + AQUANTILE (FILTERED)", non.zero.weight=TRUE)
-} else {
-  CreateBoxplot(MA.RAW.W, "Boxplots_Before_Normalization", "Unweighted BoxPlots Before Normalization (ALL)", non.zero.weight=FALSE)
-  CreateBoxplot(MA.LOESS.W, "Boxplots_LOESS_Normalization", "Unweighted BoxPlots After LOESS Normalization (ALL)", non.zero.weight=FALSE)
-  CreateBoxplot(MA.SCALED, "Boxplots_Scaled_Normalization", "Unweighted BoxPlots After SCALED (ALL)", non.zero.weight=FALSE)
-  CreateBoxplot(MA.QUANTILE, "Boxplots_Quantile_Normalization", "Unweighted BoxPlots After QUANTILE (ALL)", non.zero.weight=FALSE)
-  if(!is.null(MA.RAW.W$weights))
-    CreateBoxplot(MA.RAW.W, "Boxplots_Before_Normalization", "Weighted BoxPlots Before Normalization (FILTERED)", non.zero.weight=TRUE)
-  if(!is.null(MA.LOESS.W$weights))
-    CreateBoxplot(MA.LOESS.W, "Boxplots_LOESS_Normalization", "Weighted BoxPlots After LOESS Normalization (FILTERED)", non.zero.weight=TRUE)
-  if(!is.null(MA.RAW.W$weights))
-    CreateBoxplot(MA.SCALED, "Boxplots_Scaled_Normalization", "Weighted BoxPlots After SCALED (FILTERED)", non.zero.weight=TRUE, weights=MA.RAW.W$weights)
-  if(!is.null(MA.RAW.W$weights))
-    CreateBoxplot(MA.QUANTILE, "Boxplots_Quantile_Normalization", "Weighted BoxPlots After QUANTILE (FILTERED)", non.zero.weight=TRUE, weights=MA.RAW.W$weights)
-}
-
-## BoxplotOverview.
-if(RG$datatype=="both") {
-  boxplotOverview2color(class1=MA.RAW.W, class2=MA.LOESS.W, class3=MA.LOESS.SCALED.W, class4=MA.LOESS.QUANTILE.W, figTitles=c("Unnormalized data (ALL)","LOESS Normalization (ALL)","LOESS + SCALED (ALL)","LOESS + QUANTILE (ALL)"), non.zero.weight=FALSE, fileName="Boxplots_Overview_MValue_ALL_Reporters", y.axis="M")
-  boxplotOverview2color(class1=MA.RAW.W, class2=MA.LOESS.W, class3=MA.LOESS.SCALED.W, class4=MA.LOESS.QUANTILE.W, figTitles=c("Unnormalized data (FILTERED)","LOESS Normalization (FILTERED)","LOESS + SCALED (FILTERED)","LOESS + AQUANTILE (FILTERED)"), non.zero.weight=TRUE, fileName="Boxplots_Overview_MValue_FILTERED_Reporters", y.axis="M")
-  boxplotOverview2color(class1=MA.RAW.W, class2=MA.LOESS.W, class3=MA.LOESS.SCALED.W, class4=MA.LOESS.QUANTILE.W, figTitles=c("Unnormalized data (ALL)","LOESS Normalization (ALL)","LOESS + SCALED (ALL)","LOESS + QUANTILE (ALL)"), non.zero.weight=FALSE, fileName="Boxplots_Overview_AValue_ALL_Reporters", y.axis="A")
-  boxplotOverview2color(class1=MA.RAW.W, class2=MA.LOESS.W, class3=MA.LOESS.SCALED.W, class4=MA.LOESS.QUANTILE.W, figTitles=c("Unnormalized data (FILTERED)","LOESS Normalization (FILTERED)","LOESS + SCALED (FILTERED)","LOESS + QUANTILE (FILTERED)"), non.zero.weight=TRUE, fileName="Boxplots_Overview_AValue_FILTERED_Reporters", y.axis="A")
-} else {
-  boxplotOverview1color(class1=MA.RAW.W, class2=MA.LOESS.W, class3=MA.SCALED, class4=MA.QUANTILE, figTitles=c("Unnormalized data (ALL)","LOESS Normalization (ALL)","SCALED Normalization (ALL)","QUANTILE Normalization (ALL)"), non.zero.weight=FALSE, fileName="Boxplots_Overview_ESTValue_ALL_Reporters")
-  boxplotOverview1color(class1=MA.RAW.W, class2=MA.LOESS.W, class3=MA.SCALED, class4=MA.QUANTILE, figTitles=c("Unnormalized data (FILTERED)","LOESS Normalization (FILTERED)","SCALED Normalization (FILTERED)","QUANTILE Normalization (FILTERED)"), non.zero.weight=TRUE, fileName="Boxplots_Overview_ESTValue_FILTERED_Reporters")
-}
-
-## MA plots
-cat("*------------\n| MvA plots\n*------------\n")
-if(RG$datatype=="both") {
-  CreateMAplots(first=MA.RAW.W, second=MA.LOESS.W, third=MA.LOESS.SCALED.W, fourth=MA.LOESS.QUANTILE.W, labels=c("Raw intensities", "LOESS normalization","LOESS + SCALED normalization", "LOESS + QUANTILE normalization")) 
-} else {
-  CreateMAplots(first=MA.RAW.W, second=MA.LOESS.W, third=NULL, fourth=NULL, labels=c("Raw intensities", "LOESS normalization")) 
-}
-cat("status: OK\n\n")
 
 
 ## saving normalized data, LOESS as default for dual channel data, Quantile for single channel data
