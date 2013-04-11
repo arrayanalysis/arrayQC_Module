@@ -469,7 +469,7 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
 ##### FUTURE UPDATE
 ## Need to implment a check here that looks for all 'optional' values. (grab them with .checkColumns). Then check if all missing values are optional, then proceed.
 ## ALso need to include that the objects themselves should be altered. If optional and not present, it should be removed from the object in general.
-    reqCols <- .checkColumns(functionName="annotation", silent=TRUE, location=arrayQC.path)[["required"]]
+    reqCols <- .checkColumns(functionName="annotation", silent=TRUE, local.path=data.path, scriptpath=arrayQC.path)[["required"]]
     missing.col <- required.columns[mispos[]==0]
     missing.colname <- required.colnames[mispos[]==0]
     reqValue <- missing.col %in% reqCols
@@ -687,6 +687,7 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
       }    
     }
     cat(paste("  ", max(x$genes$Block, na.rm=TRUE), " blocks found!\n", sep=""))
+
 
     x$printer <- list(ngrid.r=blocks$nblock.row, ngrid.c=blocks$nblock.col, 
                       nspot.r=blocks$nspot.row, nspot.c=blocks$nspot.col)
