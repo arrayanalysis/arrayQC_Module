@@ -476,7 +476,7 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
     ## If all values in reqValue are FALSE, then just proceed with the QC procedure
     if(sum(reqValue) == 0) { 
       cat(paste("*", missing.colname, ":", missing.col, "\n"))
-      annotation[["missing.col"]] <- NULL  ## Possible fix!
+      annotation[[missing.col]] <- NULL  ## Possible fix!
       check.required <- 0
       cat("  --> These columns were all identified as NON-ESSENTIAL and as such arrayQC will continue to read through the files...\n")
     }
