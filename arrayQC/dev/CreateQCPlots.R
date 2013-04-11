@@ -331,7 +331,9 @@ HierarchCluster <- function(x, dist.method = "euclidean", clust.method = "ward",
 ##      Heatmap function     ##
 ##############################
 
-CreateHeatMap <- function(data, main=NULL, image.width=NULL, image.height=1400, pointsize=25) {
+CreateHeatMap <- function(data, main=NULL, image.width=NULL, image.height=NULL, pointsize=25) {
+  oldData <- data
+
   no.title <- ifelse(is.null(main), 1, 0)
   list.used <- 0
   if(is.list(data)) { temp.main <- names(data); data <- data[[1]]; list.used <- 1 }
@@ -339,12 +341,12 @@ CreateHeatMap <- function(data, main=NULL, image.width=NULL, image.height=1400, 
   if(is.null(image.width) | is.null(image.height) ) {
      temp <- floor( dim(data)[2] / maxSamples )
      image.width <- 2000 + (800 * temp)
-     image.height <- 1400 + (560 * temp)
+     image.height <- 1400 + (600 * temp)
   }
 
   my.dist <- function(x) dist(x, method="euclidean")
   my.hclust <- function(d) hclust(d, method="ward")
-  legend.keysize <- 1
+  legend.keysize <- 0.7
   if(class(data) != "matrix") {
     if(data$datatype=="both") {
       if(no.title == 1) {
@@ -392,7 +394,11 @@ CreateHeatMap <- function(data, main=NULL, image.width=NULL, image.height=1400, 
       dev.off()
     }
   } else { # object has not been generated within arrayQC
-    if(no.title == 1) { main2 <- paste("Heatmap Estimated Intensity - ", deparse(substitute(data)), sep="")  }
+    if(is.list(oldData)) {
+      if(no.title == 1) { main2 <- paste("Heatmap Estimated Intensity - ", temp.main, sep="")  }
+    } else {
+      if(no.title == 1) { main2 <- paste("Heatmap Estimated Intensity - ", deparse(substitute(data)), sep="")  }
+    }
     if(no.title == 0) { main2 <- paste("Heatmap Estimated Intensity - ", main, sep="") }
     png(paste(gsub(" ","_", main2), ".png", sep=""), width=2000, height=1400, pointsize=18)
     crp <- cor(data, use="complete.obs")
@@ -400,6 +406,10 @@ CreateHeatMap <- function(data, main=NULL, image.width=NULL, image.height=1400, 
     dev.off()
   }
 }
+
+    for(i in 1:length(MA2)) {
+      CreateHeatMap(MA2[i])
+    }
 
 ## CreateCorplot
 CreateCorplot <- function(x, which.channel=NULL, data.type=NULL, fileName = NULL) {
@@ -483,14 +493,22 @@ CreatePCAplot <- function(data, main=NULL, scaled_pca=TRUE, namesInPlot=FALSE){
     cex.circle <- 1.3
     cex.text <- 0.6
     tcol <- "#444444"
-
-    png(file = paste("PCAplot_",baseName,".png",sep=""), width=1200+(!namesInPlot)*400, height=1200, pointsize=25)
+    if(!namesInPlot) { 
+      legend.cols <- ceiling( length(arrayNames) / 64 )
+      image.width <- 1600 + (legend.cols * 200)
+    } else {
+      image.width <- 1600
+    }
+    # 1200+(!namesInPlot)*400
+    png(file = paste("PCAplot_",baseName,".png",sep=""), width=image.width, height=1200, pointsize=25)
     if(!namesInPlot) {
-      layout(rbind(c(1,1,2,2,5),c(3,3,4,4,5)))
+      layout(rbind(c(1,1,2,2,rep(5, legend.cols)),c(3,3,4,4,rep(5, legend.cols))))
       par(cex.main=1.8, cex.lab=1.4, cex.axis=1.4)
     } else {
       layout(rbind(c(1,2),c(3,4)))
     }
+
+
   plot(pca1$x[,1],pca1$x[,2],cex=cex.circle,pch=17:0,
         col=plotColors,xlab=paste("PC1 (",perc_expl1[1],"%)",sep=""),
         ylab=paste("PC2 (",perc_expl1[2],"%)",sep=""))
@@ -511,13 +529,14 @@ CreatePCAplot <- function(data, main=NULL, scaled_pca=TRUE, namesInPlot=FALSE){
         ylab="% of total variance explained")
     if(!namesInPlot) {
       plot(1,type="n",xaxt="n",yaxt="n",xlab="",ylab="",bty="n")
-      legend("topright",arrayNames,pch=17:0,col=plotColors,cex=cex.circle)
+      legend("topright",arrayNames, ncol=legend.cols, pch=17:0,col=plotColors,cex=1, title="Sample Legend")
     }
     dev.off()
   } else {
     cat("Warning: pca on the",baseName,"data set unsuccessful, possibly due to lack of memory\n\n")
   }
 }
+
 #################################
 ## CreateDensityPlots function ##
 #################################
@@ -839,7 +858,7 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
   ## Image legend will support up to 65 sample names per row. If more samples are present, the image needs to widen up.
   legendTemp <- floor( dim(x[[2]])[2] / 65 )
   cex.axis <- 1 - (legendTemp * 0.125)
-  png(file=paste(fileName, ".png", sep=""), width=1600+(800 * legendTemp), height=1200, pointsize=20)
+  png(file=paste(fileName, ".png", sep=""), width=1600+(850 * legendTemp), height=1200, pointsize=20)
     image.layout <- rbind( c(1,1,2,2,5), c(3,3,4,4,5) )
     layout(image.layout)
     for(i in 1:length(x)) {
