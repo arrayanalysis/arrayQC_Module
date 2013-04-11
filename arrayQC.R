@@ -12,8 +12,8 @@
 
 datapath  <- "/home/stan/Desktop/test/EGM_KRETA_26_02_2013/"
 
-arrayQC.scriptpath <- "/home/stan/Desktop/SVN/r-packages/arrayQC/dev/"
-# scriptpath <- "http://svn.bigcat.unimaas.nl/r-packages/arrayQC/dev/"
+#arrayQC.scriptpath <- "/home/stan/Desktop/SVN/r-packages/arrayQC/dev/"
+arrayQC.scriptpath <- "http://svn.bigcat.unimaas.nl/r-packages/arrayQC/dev/"
 
 
 dataformat <- "fes"  # Select data format of the microarray data files; "fes" (Feature Extraction Software), "genepix" or "generic" are valid here
