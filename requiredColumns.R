@@ -9,15 +9,19 @@
 #
 # Note that this function takes over one global variable name, and that is scriptpath!
 
-.checkColumns <- function(functionName=NULL, requiredFile="requiredColumns.arrayQC", silent=FALSE, location = NULL) {
+.checkColumns <- function(functionName=NULL, requiredFile="requiredColumns.arrayQC", silent=FALSE, local.path = datapath, scriptpath = arrayQC.scriptpath) {
   error <- NULL
   if(is.null(functionName)) { error <- c(error, "- functionName\n") }
-  if(is.null(location)) { error <- c(error, "- location\n") }
-
   if(!is.null(error)) { cat("[[WARNING]] .checkColumns stopped due to undefined variable(s):\n"); stop(cat(paste(error, sep=""))) }
 
-  if(!file.exists( paste(location,"/",requiredFile, sep="") )) { stop(paste(location, "/requiredColumns.arrayQC was not found!", sep="")) }
-  a <- as.matrix(read.table(file=paste(location,requiredFile, sep=""), sep="\t", row.names=1, colClasses="character", skip=9, fill=TRUE, stringsAsFactors=FALSE))
+  temp <- paste(local.path,"/",requiredFile, sep="")
+
+  if(!file.exists( temp )) { 
+    cat(paste("* Downloading", requiredFile, "...")) 
+    download.file(paste(arrayQC.scriptpath, requiredFile, sep=""), temp, quiet=TRUE)
+    cat(" done.\n")
+  }
+  a <- as.matrix(read.table(file=temp, sep="\t", row.names=1, colClasses="character", skip=9, fill=TRUE, stringsAsFactors=FALSE))
   if(silent == 0) { cat(paste("* Checking required / optional columns of ", functionName, "...\n", sep="")) }
   if(length(grep(functionName, rownames(a)))!=1) {
     stop(paste("[[ ERROR ]]", functionName, "can not be found in", requiredFile, "!\n"))
