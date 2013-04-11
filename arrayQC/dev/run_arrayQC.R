@@ -45,9 +45,9 @@ library(affy)
 reload <- function() {
   source(paste(arrayQC.scriptpath,"requiredColumns.R", sep=""))
   source(paste(arrayQC.scriptpath,"ReadFiles.R", sep=""))
-  source(paste(arrayQC.scriptpath,"QC.R", sep=""))
-  source(paste(arrayQC.scriptpath,"CreateQCPlots.R", sep=""))
-  source(paste(arrayQC.scriptpath,"functions.EListRaw.R", sep=""))
+#  source(paste(arrayQC.scriptpath,"QC.R", sep=""))
+#  source(paste(arrayQC.scriptpath,"CreateQCPlots.R", sep=""))
+#  source(paste(arrayQC.scriptpath,"functions.EListRaw.R", sep=""))
 }
 
 reload()
