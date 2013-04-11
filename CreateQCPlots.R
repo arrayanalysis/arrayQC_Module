@@ -407,10 +407,6 @@ CreateHeatMap <- function(data, main=NULL, image.width=NULL, image.height=NULL, 
   }
 }
 
-    for(i in 1:length(MA2)) {
-      CreateHeatMap(MA2[i])
-    }
-
 ## CreateCorplot
 CreateCorplot <- function(x, which.channel=NULL, data.type=NULL, fileName = NULL) {
   y <- NULL
@@ -962,6 +958,7 @@ createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=
       #Determining color densities and plotting the MA-plot
       color <- densCols(a, m)
       plot(a, m, xlim=x.lim, ylim=y.lim, col=color, cex=0.3, pch=16, xlab="A", ylab="M")
+
       title(main=titleName, sub=subtext2[j], outer=FALSE)
       abline(0,0,col="darkgrey", lty=2)
     }
