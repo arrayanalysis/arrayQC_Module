@@ -315,8 +315,8 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
     cat("Paste the following in your R session window to debug the current function:\n")
     cat(" description.file <- experimentalDescr\n spottypes.file <- spotfile\n data.path <- datapath\n")
     cat(" columns <- columns\n other <- other.columns\n annotation <- annotation\n blocks <- NULL\n")
-    cat(" source <- softwarepackage\n use.description <- TRUE\n save.backup <- TRUE\n manual.flags <- useAsManualFlags\n")
-    cat(" controlType.value <- controlType.value\narrayQC.path <- scriptpath")
+    cat(" source <- package\n use.description <- TRUE\n save.backup <- TRUE\n manual.flags <- useAsManualFlags\n")
+    cat(" controlType.value <- controlType.value\narrayQC.path <- arrayQC.scriptpath")
     stop("[/StartDebug]\n----")
   }
 
@@ -476,6 +476,7 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
     ## If all values in reqValue are FALSE, then just proceed with the QC procedure
     if(sum(reqValue) == 0) { 
       cat(paste("*", missing.colname, ":", missing.col, "\n"))
+      annotation[["missing.col"]] <- NULL  ## Possible fix!
       check.required <- 0
       cat("  --> These columns were all identified as NON-ESSENTIAL and as such arrayQC will continue to read through the files...\n")
     }
@@ -526,6 +527,8 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
   # changed back to the defaults in this case
   if(!is.null(other)) { names(x$other) <- names(other[!sapply(other,is.null)]) }
   names(x$genes) <- names(annotation[!sapply(annotation,is.null)])
+
+  ## NEED TO FIX THIS!! IF A HEADER IS NON-ESSENTIAL, IT SHOULD BE REMOVED FROM THE ANNOTATION PART.
 
   if(source=="generic") {
     ## It is possible that in a generic format there might be additional lines in the end
