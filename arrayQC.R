@@ -1,6 +1,6 @@
 ## One and two channel QC - Dept. of Bioinformatics / Toxicogenomics - Maastricht University - the Netherlands
 # Version: 1.3.0-DEV
-# Last adjustment: 13-Nov-2012
+# Last adjustment: 11-Apr-2013
 
 ###########################
 ## USER-DEFINED SETTINGS ##
@@ -46,7 +46,7 @@ controlType.value <- NULL
 ## Variables that are set to run the script. Only when arrayQC.mode is set to "local"
 ## Nog even over nadenken hoe dit wordt aangepast door de webservice...
 #if(arrayQC.mode == "local") {
-  plotVirtualImages <- FALSE
+  plotVirtualImages <- TRUE
   plotBoxplot <- TRUE
   plotHeatmap <- TRUE
   plotClust <- TRUE
@@ -54,7 +54,7 @@ controlType.value <- NULL
   plotCor <- TRUE
   plotMvA <- TRUE
   plotDensity <- TRUE
-  normMethod <- "loess"
+  if(datatype == "two-channel") {  normMethod <- "loess" } else { normMethod <- "quantile" }
 #}
 
 
