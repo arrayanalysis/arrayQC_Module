@@ -337,7 +337,7 @@ CreateHeatMap <- function(data, main=NULL, image.width=NULL, image.height=1400, 
   if(is.list(data)) { temp.main <- names(data); data <- data[[1]]; list.used <- 1 }
   
   if(is.null(image.width) | is.null(image.height) ) {
-     temp <- floor( dim(x)[2] / maxSamples )
+     temp <- floor( dim(data)[2] / maxSamples )
      image.width <- 2000 + (800 * temp)
      image.height <- 1400 + (560 * temp)
   }
