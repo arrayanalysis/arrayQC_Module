@@ -276,6 +276,9 @@ imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.tra
       if(binary) zlim <-c(0, 1)
       if(QCField) zlim <- c((data.object$datatype=="green") * -3 + (data.object$datatype=="red") * -5 + (data.object$datatype=="both") * -8, 0)
       par(mar=(c(2,3,3,5) + 0.1))
+
+      ## Function throws error if z-limits are identical. Adding artificial values to it.
+      if(zlim[1] == zlim[2]) { zlim <- c(zlim[1]-0.5, zlim[2]+0.5) }
       imageplot(plot.field[,i], printer.info, zlim=zlim, mar=c(2, 2, 4, 4), main=cnames[i], high=high, low=low, legend=TRUE, col.main=col.main, zerocenter=symm)
       # emptyplot()
       ColorFunction <- colorRampPalette(c(low,high))
