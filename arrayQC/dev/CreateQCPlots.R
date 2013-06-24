@@ -846,11 +846,13 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
   ## Check the maximum characters of the values assigned to the legend:
   a <- nchar(colnames(x[[1]]))
   b <- a[] >= max.characters
+  error2 <- NULL
   if(sum(b, na.rm=TRUE) > 0) {
+    a[b] <- substr(a[b], 1, 20)
     error <- c(error, paste("- The following sample descriptions are too long ( >= ", max.characters, " characters) :\n", sep=""))
     error <- c(error, paste("-", a[b], "\n"))
   }
-
+  cat(paste(error2, "These names have been truncated to fit the 20 character length!", sep=""))
 
   if(!is.null(error)) { stop(paste("[WARNING] The following error(s) occurred:\n", paste(error, collapse="\n"), "\n\nPlease adress the above issues!\n")) }
 
