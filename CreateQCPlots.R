@@ -860,7 +860,8 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
     colnames(x[[1]])[b] <- zzz
     rm(zzz)
   }
-  cat(paste(error2, "These names have been truncated to fit the 20 character length (last 20 letters)!", sep=""))
+  cat(error2)
+  cat("\nThese names have been truncated to fit the 20 character length (last 20 letters)!")
 
   if(!is.null(error)) { stop(paste("[WARNING] The following error(s) occurred:\n", paste(error, collapse="\n"), "\n\nPlease adress the above issues!\n")) }
 
@@ -877,13 +878,13 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
         data <- naZeroWeights( x[[i]], weights=weights ) 
       } else { data <- x[[i]] }
 
-      if( is.null(y.axis) ) { data <- data   } else { 
-        if( y.axis == "M" ) { data <- data$M }
-        if( y.axis == "A" ) { data <- data$A }
+      if( is.null(y.axis) ) { data <- data; ylab="value"   } else { 
+        if( y.axis == "M" ) { data <- data$M; ylab="M" }
+        if( y.axis == "A" ) { data <- data$A; ylab="A" }
       }
       boxplot(data, names=c(1:dim(x[[i]])[2]), ylim=y.lim, main=figTitles[i], cex.axis=cex.axis, las=2)
     }
-    plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab="", bty='n')
+    plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab=ylab, bty='n')
     legend("topright", paste( c(1:dim(x[[1]])[2]), ": ", colnames(x[[1]]), sep=""), ncol=(legendTemp + 1), box.lwd = 0,box.col = "white",bg = "white")
   dev.off()
 
