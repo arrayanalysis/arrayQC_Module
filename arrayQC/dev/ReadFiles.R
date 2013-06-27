@@ -294,7 +294,7 @@ parseHeaderFile <- function(xpath=NULL, fileName="columnHeaders.arrayQC", dataty
   return(y)
 }
 
-ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL, columns=NULL, other=NULL, annotation=NULL, blocks=NULL, source=NULL, use.description=FALSE, save.backup=TRUE, manual.flags=NULL, debug.parameter=FALSE, controlType.value=NULL, arrayQC.path="http://svn.bigcat.unimaas.nl/r-packages/arrayQC/") {
+ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL, columns=NULL, other=NULL, annotation=NULL, blocks=NULL, source=NULL, use.description=FALSE, save.backup=TRUE, manual.flags=NULL, debug.parameter=FALSE, controlType.value=NULL, arrayQC.path="http://svn.bigcat.unimaas.nl/r-packages/arrayQC/dev/", max.characters=20 ) {
 #-- To add for "generic" support:
 #   number of lines to skip prior to reading in the files!
   error <- NULL
@@ -378,6 +378,24 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
 
   targets <- readTargets(file=paste(data.path, description.file, sep=""), sep="\t", quote="\"");
   cat(" ok\n");
+
+  cat(paste(" * Checking target file descriptions ( <", max.characters," characters) ...", sep=""))
+  a <- nchar(targets$Description)
+  b <- a[] > max.characters
+  if( sum(b, na.rm=TRUE) > 0 ) {
+    cat("    * The following description names were too long and were trimmed:\n")
+    zzz <- targets$Description[b]
+    for(k in 1:length(zzz)) {
+      cat(paste("      ->", zzz[k], " -->"))
+      zzz[k] <- substr( zzz[k], nchar(zzz[k])- (max.characters - 1), nchar(zzz[k]) )
+      cat(paste(zzz[k], "\n"))
+    }
+    targets$Description[b] <- zzz
+    cat("\n\n [[ If you would like to adjust the description, then press CTRL+C and re-run the arrayQC scripts - After 10 seconds this script will continue ]]\n")
+    Sys.sleep(10)
+  }
+  
+  
   
   #check whether target file is ok
   #first convert to correct case if needed

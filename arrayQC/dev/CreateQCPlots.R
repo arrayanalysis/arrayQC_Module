@@ -879,12 +879,12 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
       } else { data <- x[[i]] }
 
       if( is.null(y.axis) ) { data <- data; ylab="value"   } else { 
-        if( y.axis == "M" ) { data <- data$M; ylab="M" }
-        if( y.axis == "A" ) { data <- data$A; ylab="A" }
+        if( y.axis == "M" ) { data <- data$M; ylab="M-value" }
+        if( y.axis == "A" ) { data <- data$A; ylab="A-value" }
       }
-      boxplot(data, names=c(1:dim(x[[i]])[2]), ylim=y.lim, main=figTitles[i], cex.axis=cex.axis, las=2)
+      boxplot(data, names=c(1:dim(x[[i]])[2]), ylim=y.lim, main=figTitles[i], ylab=ylab, cex.axis=cex.axis, las=2)
     }
-    plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab=ylab, bty='n')
+    plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab="", bty='n')
     legend("topright", paste( c(1:dim(x[[1]])[2]), ": ", colnames(x[[1]]), sep=""), ncol=(legendTemp + 1), box.lwd = 0,box.col = "white",bg = "white")
   dev.off()
 
