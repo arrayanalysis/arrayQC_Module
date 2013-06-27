@@ -848,11 +848,13 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
   b <- a[] >= max.characters
   error2 <- NULL
   if(sum(b, na.rm=TRUE) > 0) {
-    a[b] <- substr(a[b], 1, 20)
-    error <- c(error, paste("- The following sample descriptions are too long ( >= ", max.characters, " characters) :\n", sep=""))
-    error <- c(error, paste("-", a[b], "\n"))
+    error2 <- c(error2, paste("- The following sample descriptions are too long ( >= ", max.characters, " characters) :\n", sep=""))
+    temp <- substr(a[b], length(a)-19, length(a))
+    error2 <- c(error2, paste("-", a[b], " --> ", temp, "\n"))
+    a[b] <- temp
+    rm(temp)
   }
-  cat(paste(error2, "These names have been truncated to fit the 20 character length!", sep=""))
+  cat(paste(error2, "These names have been truncated to fit the 20 character length (last 20 letters)!", sep=""))
 
   if(!is.null(error)) { stop(paste("[WARNING] The following error(s) occurred:\n", paste(error, collapse="\n"), "\n\nPlease adress the above issues!\n")) }
 
