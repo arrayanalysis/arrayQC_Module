@@ -857,7 +857,7 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
       error2 <- c(error2, temp)
       rm(temp)
     }
-    colnames(x)[b] <- zzz
+    colnames(x[[1]])[b] <- zzz
     rm(zzz)
   }
   cat(paste(error2, "These names have been truncated to fit the 20 character length (last 20 letters)!", sep=""))
