@@ -306,6 +306,7 @@ if(plotClust == 1) {
   ## Cluster plots - by default: cluster.distance="euclidean", cluster.method="ward". Can be changed by other methods available in ?hdist and ?hclust
   if(RG$datatype=="both") {
 
+
     for(i in 1:length(MA)) {
       switch(names(MA)[i], "RAW" = { ######### NEED TO CHECK IF THIS IS STILL VALID!!!
          addTitle <- "RAW Data"
@@ -392,6 +393,11 @@ if(plotDensity == 1) {
   })
 }
 
+if(plotMvA == 1) {
+  cat("*------------\n| MvA plots\n*------------\n")
+  createMAplots(MA, weight=MA[["BGCORRECTED"]]$weights) ## For single-channel arrays no MA plots can be made for quantile and scaled normalization, because this was based on intensities.
+}
+
 if(plotBoxplot == 1) {
   cat("*------------\n| Boxplots\n*------------\n")
   switch(datatype, "two-channel" = {
@@ -404,11 +410,6 @@ if(plotBoxplot == 1) {
     boxplotOverview(MA2, use.weights=FALSE)
   })
 }
-if(plotMvA == 1) {
-  cat("*------------\n| MvA plots\n*------------\n")
-  createMAplots(MA, weight=MA[["BGCORRECTED"]]$weights) ## For single-channel arrays no MA plots can be made for quantile and scaled normalization, because this was based on intensities.
-}
-
 
 normMethods <- matrix(data=NA, ncol=3, nrow=5, dimnames=list("methods"=c("bgcorrected","loess","quantile","aquantile","scaled"), "datatype"=c("red","green","two-channel")))
 normMethods[,1] <- normMethods[,2] <- c("BGCORRECTED", "LOESS", "QUANTILE", NA, "SCALED")
