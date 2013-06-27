@@ -307,6 +307,7 @@ if(plotClust == 1) {
   if(RG$datatype=="both") {
 
 
+
     for(i in 1:length(MA)) {
       switch(names(MA)[i], "RAW" = { ######### NEED TO CHECK IF THIS IS STILL VALID!!!
          addTitle <- "RAW Data"
