@@ -16,12 +16,12 @@
 
   temp <- paste(local.path,"/",requiredFile, sep="")
 
-  if(!file.exists( temp )) { 
-    cat(paste("* Downloading", requiredFile, "...")) 
-    download.file(paste(arrayQC.scriptpath, requiredFile, sep=""), temp, quiet=TRUE)
-    cat(" done.\n")
-  }
-  a <- as.matrix(read.table(file=temp, sep="\t", row.names=1, colClasses="character", skip=9, fill=TRUE, stringsAsFactors=FALSE))
+#  if(!file.exists( temp )) { 
+#    cat(paste("* Downloading", requiredFile, "...")) 
+#    download.file(paste(arrayQC.scriptpath, requiredFile, sep=""), temp, quiet=TRUE)
+#    cat(" done.\n")
+#  }
+  a <- as.matrix(read.table(file=paste(scriptpath, requiredFile, sep=""), sep="\t", row.names=1, colClasses="character", skip=9, fill=TRUE, stringsAsFactors=FALSE))
   if(silent == 0) { cat(paste("* Checking required / optional columns of ", functionName, "...\n", sep="")) }
   if(length(grep(functionName, rownames(a)))!=1) {
     stop(paste("[[ ERROR ]]", functionName, "can not be found in", requiredFile, "!\n"))

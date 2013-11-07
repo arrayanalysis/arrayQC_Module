@@ -1,6 +1,6 @@
 ## One and two channel QC - Dept. of Bioinformatics / Toxicogenomics - Maastricht University - the Netherlands
-# Version: 1.3.0-DEV
-# Last adjustment: 11-Apr-2013
+# Version: 1.3.2-DEV
+# Last adjustment: 07-Nov-2013
 
 ###########################
 ## USER-DEFINED SETTINGS ##
@@ -10,14 +10,14 @@
 #  and end with a forward slash
 #datapath  <- "/home/stan/Desktop/PipelinePaper/set3/"
 
-datapath  <- "/home/stan/Desktop/test/EGM_KRETA_26_02_2013/"
+datapath  <- "/location/to/your/files"
 
 #arrayQC.scriptpath <- "/home/stan/Desktop/SVN/r-packages/arrayQC/dev/"
 arrayQC.scriptpath <- "http://svn.bigcat.unimaas.nl/r-packages/arrayQC/dev/"
 
 
-dataformat <- "fes"  # Select data format of the microarray data files; "fes" (Feature Extraction Software), "genepix" or "generic" are valid here
-datatype <- "green"  # Describe what type of microarrays are used in your dataset; "two-channel", "red" or "green" are valid options
+dataformat <- ""  # Select data format of the microarray data files; "fes" (Feature Extraction Software), "genepix" or "generic" are valid here
+datatype <- ""  # Describe what type of microarrays are used in your dataset; "two-channel", "red" or "green" are valid options
 
 ## If the microarray contains more than one block, please change the values below accordingly.
 # 
@@ -27,7 +27,7 @@ nblock.col <- NULL
 
 ## columnHeader file. Change this value to the name (and location) of the file containing the 
 #  column headers that will be read in. For standard Agilent and GenePix runs this variable
-#  should be empty.
+#  should be NULL.
 columnHeaderFile <- NULL
 
 ## Give one or more values - if any - that you used as manual flagging values within the data set
@@ -46,15 +46,17 @@ controlType.value <- NULL
 ## Variables that are set to run the script. Only when arrayQC.mode is set to "local"
 ## Nog even over nadenken hoe dit wordt aangepast door de webservice...
 #if(arrayQC.mode == "local") {
-  plotVirtualImages <- TRUE
-  plotBoxplot <- TRUE
-  plotHeatmap <- TRUE
-  plotClust <- TRUE
-  plotPCA <- TRUE
-  plotCor <- TRUE
-  plotMvA <- TRUE
-  plotDensity <- TRUE
-  if(datatype == "two-channel") {  normMethod <- "loess" } else { normMethod <- "quantile" }
+  plotVirtualImages <- TRUE  ## Should we plot Virtual Images?
+  plotBoxplot <- TRUE  ## Should we plot boxplots?
+  plotHeatmap <- TRUE  ## Should we generate correlation heatmaps?
+  plotClust <- TRUE  ## Should we generate cluster images?
+  plotPCA <- TRUE  ## Should we generate a PCA plot?
+  plotCor <- TRUE  ## Should we generate a Correlation Plot?
+  plotMvA <- TRUE  ## Should we generate an MvA plot?
+  plotDensity <- TRUE  ## Should we generate a density plot?
+  ## Which normMethod do you choose in the end? Options are "bgcorrected", "loess", "quantile", "aquantile", "scaled"
+  if(datatype == "two-channel") {  normMethod <- "loess" } else { normMethod <- "quantile" } 
+
 #}
 
 

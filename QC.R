@@ -383,17 +383,18 @@ AddSummary <- function(x) {
 ## SaveData function  ##
 ########################
 
-SaveData <- function(x=NULL, save.RG=TRUE, save.MA=TRUE, save.QC=TRUE, detailed.QC=TRUE, raw=NULL) {
+SaveData <- function(x, save.RG=TRUE, save.MA=TRUE, save.QC=TRUE, detailed.QC=TRUE, raw=NULL, store.output=FALSE) {
   if(is.null(x)) stop("data object (MAList or matrix) must be provided")
   if(class(x)!="MAList" & class(x)!="matrix") stop("data object must be either of class MAList or of class matrix")
-  if(class(x)=="matrix" & is.null(raw)) stop("when saving a matrix object, also provide raw data object for addition of gene information")
+  if(class(x)=="matrix" & is.null(raw)) stop("when saving a matrix object, also provide raw data object (i.e. RG) for addition of gene information")
   if((save.QC | detailed.QC) & is.null(raw)) stop("when saving QC information, also provide raw data object for adding this information")
   if(!is.null(raw) & (class(raw)!="RGList") & class(raw)!="EListRaw") stop("the raw data object should be of class RGList or EListRaw")
-  
   #if raw is not given (e.g. x is of class MAList and no QC needed to be saved), copy x into raw to get uniform code for both cases
   if(is.null(raw)) raw <- x
   
   outputData <- NULL
+  a <- list()
+
   if(!is.null(raw$genes$FeatureNum)) outputData <- cbind(outputData, FeatureNum=raw$genes$FeatureNum)
   if(!is.null(raw$genes$ProbeName)) outputData <- cbind(outputData, ProbeName=raw$genes$ProbeName)
   if(!is.null(raw$genes$ControlType)) outputData <- cbind(outputData, ControlType=raw$genes$ControlType)
@@ -420,6 +421,7 @@ SaveData <- function(x=NULL, save.RG=TRUE, save.MA=TRUE, save.QC=TRUE, detailed.
         ESTval <- x$other$EST
         colnames(ESTval) <- paste(colnames(ESTval),ifelse(raw$datatype=="green","G","R"))
         outputData <- cbind(outputData, ESTval)
+        a[["RG"]] <- outputData
         rm(ESTval)
       }
     }
@@ -428,6 +430,7 @@ SaveData <- function(x=NULL, save.RG=TRUE, save.MA=TRUE, save.QC=TRUE, detailed.
   if(save.MA) {
     if(class(x)=="matrix") {
       cat("WARNING: one-channel data, no MA values can be saved\n")
+      outputData <- cbind(outputData, x)
     } else  { #MAList
       if (raw$datatype=="both") {
         MAval <- cbind(x$M, x$A)
@@ -499,8 +502,15 @@ SaveData <- function(x=NULL, save.RG=TRUE, save.MA=TRUE, save.QC=TRUE, detailed.
     }
   }
 
-  write.table(outputData, file="NormData.tab", quote=FALSE, sep="\t", row.names=FALSE)
-  if(detailed.QC) write.table(outputQC, file="QCData.tab", quote=FALSE, sep="\t", row.names=FALSE)
+  write.table(outputData, file="arrayQC_normData.table", quote=FALSE, sep="\t", row.names=FALSE)
+  if(detailed.QC) { write.table(outputQC, file="arayQC_flags.table", quote=FALSE, sep="\t", row.names=FALSE) }
+  
+  if(store.output == 1) {
+    a <- list()
+    a[["output"]] <-  outputData
+    if(detailed.QC) { a[["QC"]] <- outputQC }
+    return(a)
+  }
 }
 
 ########################

@@ -1,4 +1,4 @@
-# version 1.4.0
+# version 1.3.2
 # - Fully compatible with first dev release
 
 require(RColorBrewer)  ## Color Palette
@@ -159,7 +159,7 @@ CreateSummaryPlots <- function(RG) {
 
 ## Adapted imageplot3by2 function
 
-imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.transform=FALSE, symm=FALSE, orientation=NULL, debug=0) {
+imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.transform=FALSE, symm=FALSE, orientation=NULL, debug=0, base.number=12) {
   error <- NULL
   if(!class(data.object) %in% c("RGList","MAList","EListRaw")) { error <- c(error, "- Object is not of RGList, ElistRaw, or MAList class\n") }
   if(is.null(name)) { error <- c(error, "- name parameter not filled in\n") }
@@ -186,6 +186,8 @@ imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.tra
   narrays <- ncol(which.field)
   npages <- ceiling(narrays/6)
   cnames <- colnames(which.field)
+
+  max.dimensions <- base.number * 200
 
   #Calculating z-ranges and their mean and stdev
   minima <- NULL
@@ -236,14 +238,21 @@ imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.tra
   #Plotting the array images
   cat("  ok.\n   * Plotting images:\n")
   pbar <- txtProgressBar(min=0, max=npages, char="*", width=20, style=3)
-  dimensions <- c((14 * printer.info$nspot.c * printer.info$ngrid.c), (14 * printer.info$nspot.r * printer.info$ngrid.r))
 
+  dimensions <- c((base.number * printer.info$nspot.c * printer.info$ngrid.c), (base.number * printer.info$nspot.r * printer.info$ngrid.r))
+
+  ## If the image width gets bigger than 720 px, then rescale the whole image to this maximum width. This to ensure that the legend plotted is done correctly.
+   if(dimensions[2] > dimensions[1]) { ## Width > height --> landscape
+     dimensions[1] <- dimensions[1] / dimensions[2] * max.dimensions
+     dimensions[2] <- max.dimensions
+   } else {
+     dimensions[1] <- max.dimensions
+     dimensions[2] <- dimensions[2] / dimensions[1] * max.dimensions
+   }
   for (ipage in 1:npages) {
     i1 <- ipage * 6 - 5
     i2 <- min(ipage * 6, narrays)
     fn <- paste(prefix, "-", i1, "-", i2, ".png", sep = "")
-    ## Adjusted size of image, dependant on the data dimensions
-#    png(filename=fn, width=8.5 * 140, height=10 * 140, pointsize=20)
     png(filename=fn, width=dimensions[2], height=dimensions[1], pointsize=20)
     layout(rbind(
        matrix(data=c(rep(1,4),rep(2,4)), nrow=3, ncol=8, byrow=T),
@@ -276,22 +285,20 @@ imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.tra
       if(binary) zlim <-c(0, 1)
       if(QCField) zlim <- c((data.object$datatype=="green") * -3 + (data.object$datatype=="red") * -5 + (data.object$datatype=="both") * -8, 0)
       par(mar=(c(2,3,3,5) + 0.1))
-
-      ## Function throws error if z-limits are identical. Adding artificial values to it.
+      ## Function throws error if z-limits are identical. Adding artificial values to it:
       if(zlim[1] == zlim[2]) { zlim <- c(zlim[1]-0.5, zlim[2]+0.5) }
       imageplot(plot.field[,i], printer.info, zlim=zlim, mar=c(2, 2, 4, 4), main=cnames[i], high=high, low=low, legend=TRUE, col.main=col.main, zerocenter=symm)
       # emptyplot()
       ColorFunction <- colorRampPalette(c(low,high))
 
       cex.size <- 0.6
-      if( dimensions[1] > (3 * dimensions[2])) {
-        pos.x <- c(0.87, 0.90)
-        pos.y <- c(0.01, 0.99)
+      if( dimensions[2] < dimensions[1]) {
+        pos.x <- c(0.88, 0.89)
+        pos.y <- c(0.02, 0.94)
       } else {
-        pos.x <- c(0.95, 0.96)  #0.91, 0.93
-        pos.y <- c(0.01, 0.94)
+        pos.x <- c(0.96, 0.965)  #0.91, 0.93 ## 0.95, 0.96
+        pos.y <- c(0.02, 0.94)
       }
-
       if(binary) {
         colors2use <- ColorFunction(2)
         colorlegend(col=colors2use, zlim, left=FALSE, zval=c(zlim[1], zlim[2]), posy=pos.y, posx=pos.x, cex=cex.size, digit=1)
@@ -323,7 +330,7 @@ HierarchCluster <- function(x, dist.method = "euclidean", clust.method = "ward",
      temp <- floor( dim(x)[2] / maxSamples )
      image.width= 1600 + (800 * temp)
   }
-  png(paste("Cluster_",main,".png", sep=""), width=image.width, height=image.height, pointsize=pointsize)
+  png(paste("Clustering_", dist.method,"-", clust.method,"__",main,".png", sep=""), width=image.width, height=image.height, pointsize=pointsize)
   if(dim(x)[2] >= 100) par(cex=0.8, cex.axis=1.25, cex.lab=1.25, cex.main=1.5, cex.sub=1.25)
   plot(b, main=main, ...)
   dev.off()
@@ -809,8 +816,7 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
   rm(check)
 
   if(use.weights == TRUE) { fileName <- paste(fileName, "_weighted", sep="") }
-  if(is.null(y.lim)) { y.lim <- c(0,20) }
-
+  if(is.null(y.lim)) { cat("[ WARNING ] y.axis minimum and maximum value (y.lim) were undefined. Using default values instead: c(0,20)\n"); y.lim <- c(0,20) }
   if(!is.null(figTitles)) { 
     if( length(figTitles) != length(x) ) { 
       error <- c(error, "- figTitles: data object size does not correspond with figure title length") 
@@ -845,10 +851,10 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
 
   ## Check the maximum characters of the values assigned to the legend:
   a <- nchar(colnames(x[[1]]))
-  b <- a[] >= max.characters
+  b <- a[] > max.characters
   error2 <- NULL
   if(sum(b, na.rm=TRUE) > 0) {
-    error2 <- c(error2, paste("- The following sample descriptions are too long ( >= ", max.characters, " characters) :\n", sep=""))
+    error2 <- c(error2, paste("- The following sample descriptions are too long ( > ", max.characters, " characters) :\n", sep=""))
     zzz <- colnames(x[[1]])[b]
     for(k in 1:length(zzz)) {
       temp <- paste("  -", zzz[k], " --> ")
@@ -859,17 +865,20 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
     }
     colnames(x[[1]])[b] <- zzz
     rm(zzz)
+    cat("\nThese names have been truncated to fit the 20 character length (last 20 letters)!")
+
   }
   cat(error2)
-  cat("\nThese names have been truncated to fit the 20 character length (last 20 letters)!")
 
   if(!is.null(error)) { stop(paste("[WARNING] The following error(s) occurred:\n", paste(error, collapse="\n"), "\n\nPlease adress the above issues!\n")) }
 
   ## Image legend will support up to 65 sample names per row. If more samples are present, the image needs to widen up.
-  legendTemp <- floor( dim(x[[2]])[2] / 65 )
+  legendTemp <- floor( dim(x[[1]])[2] / 65 )
   cex.axis <- 1 - (legendTemp * 0.125)
   png(file=paste(fileName, ".png", sep=""), width=1600+(850 * legendTemp), height=1200, pointsize=20)
-    image.layout <- rbind( c(1,1,2,2,5), c(3,3,4,4,5) )
+#    print(dim(x[[1]]$M))
+    if(legendTemp > 0) { image.layout <- rbind( c(1,1,2,2,5), c(3,3,4,4,5) ) } else { image.layout <- rbind( c(1,1,1,2,2,2,5), c(3,3,3,4,4,4,5) ) }
+#    image.layout <- rbind( c(1,1,2,2,5), c(3,3,4,4,5) )
     layout(image.layout)
     for(i in 1:length(x)) {
       ## Which value to plot
@@ -878,23 +887,31 @@ boxplotOverview <- function(x, fileName=NULL, figTitles=NULL, groupcols=NULL, us
         data <- naZeroWeights( x[[i]], weights=weights ) 
       } else { data <- x[[i]] }
 
-      if( is.null(y.axis) ) { data <- data; ylab="value"   } else { 
-        if( y.axis == "M" ) { data <- data$M; ylab="M-value" }
+      if( is.null(y.axis) ) { data <- data; ylab="value"; y.axis="custom"   } else { 
+        if( y.axis == "M" ) { data <- data$M; ylab="M-value"; data[data[]> max(y.lim)] <- max(y.lim); data[data[]< min(y.lim)] <- min(y.lim) }
         if( y.axis == "A" ) { data <- data$A; ylab="A-value" }
       }
-      boxplot(data, names=c(1:dim(x[[i]])[2]), ylim=y.lim, main=figTitles[i], ylab=ylab, cex.axis=cex.axis, las=2)
+     
+      boxplot(data, names=paste("[", 1:dim(data)[2], "]", sep=""), ylim=y.lim, main=figTitles[i], ylab=ylab, cex.axis=cex.axis, las=2)
+      if(y.axis == "M" ) { abline(h=0, lwd=1, lty=2, col="darkgrey") }
+      abline(h= mean(data, na.rm=TRUE), lwd=1, lty=3, col="darkred")
+      abline(h= median(data, na.rm=TRUE), lwd=1, lty=3, col="darkgreen")
     }
-    plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab="", bty='n')
-    legend("topright", paste( c(1:dim(x[[1]])[2]), ": ", colnames(x[[1]]), sep=""), ncol=(legendTemp + 1), box.lwd = 0,box.col = "white",bg = "white")
+    par(mai=c(0,0,0,0)) 
+    plot.new()
+    #plot(0,type='n',xaxt='n',yaxt='n',xlab="",ylab="", bty='n')
+    legend("topright", c("Average", "Median", "", paste("[", 1:dim(data)[2], "] ", colnames(data), sep="")), lty=c(3, 3, rep(0, dim(data)[2])+1), col=c("darkred", "darkgreen", rep("lightgray", dim(data)[2] + 1)), ncol=legendTemp + 1, box.lwd = 0,box.col = "white",bg = "lightgray")
+#    legend("bottomright", "Mean value", ncol="darkred", lty=3)
   dev.off()
 
 }
 
+lty=c(3, rep(NULL, dim(data)[2] + 1))
 
 ##############################
 ## CreateMAplots function   ##
 ##############################
-createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=1600, image.height=1200, pointsize=25, y.lim=NULL, x.lim=NULL) {
+createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=1600, image.height=1200, pointsize=25, y.lim=NULL, x.lim=NULL, y.symm=FALSE, loess.curve=TRUE, loess.col="darkred", lwd=2, lty=1, ...) {
   cat("* Preprocessing MA Plots ...")
   error <- NULL
   if( class(x) != "list" ) { error <- c(error, "- object x is not a list class!") }
@@ -933,6 +950,7 @@ createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=
   }
   if(is.null(x.lim)) { x.lim <- c( min( floor(tempA) ) - 1, max( ceiling(tempA) ) + 1 ) }
   if(is.null(y.lim)) { y.lim <- c( min( floor(tempM) ) - 1, max( ceiling(tempM) ) + 1 ) }
+  if(y.symm) { y.lim <- c( max(abs(y.lim)), -max(abs(y.lim)) ) }
 
   cat("  ok.\n* MA plotting progress:\n")
   #### PLOTTING
@@ -958,6 +976,13 @@ createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=
         plot(a, m, xlim=x.lim, ylim=y.lim, col=color, cex=0.3, pch=16, xlab="A", ylab="M")
         title(main=titleName, sub=subtext1[j], outer=FALSE)
         abline(0,0,col="darkgrey", lty=2)
+        if(loess.curve == 1) { 
+          lines(loess.smooth(a,m), col=loess.col, lwd=lwd, lty=lty)
+          temp <- loess(m~a)
+          x1 <- seq( min(a, na.rm=TRUE), max(a, na.rm=TRUE), (max(a, na.rm=TRUE) - min(a, na.rm=TRUE)) / 1000)
+          lines(x1, predict(temp, newdata=x1), col="darkblue", lty=lty, lwd=lwd)
+          rm(temp, x1)
+        }
       }
       dev.off()
     }
@@ -972,9 +997,15 @@ createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=
       #Determining color densities and plotting the MA-plot
       color <- densCols(a, m)
       plot(a, m, xlim=x.lim, ylim=y.lim, col=color, cex=0.3, pch=16, xlab="A", ylab="M")
-
       title(main=titleName, sub=subtext2[j], outer=FALSE)
       abline(0,0,col="darkgrey", lty=2)
+      if(loess.curve == 1) { 
+        lines(loess.smooth(a,m), col=loess.col, lwd=lwd, lty=lty)
+        temp <- loess(m~a)
+        x1 <- seq( min(a, na.rm=TRUE), max(a, na.rm=TRUE), (max(a, na.rm=TRUE) - min(a, na.rm=TRUE)) / 1000)
+        lines(x1, predict(temp, newdata=x1), col="darkblue", lty=lty, lwd=lwd)
+        rm(temp, x1)
+      }
     }
     dev.off()
     setTxtProgressBar(pbar, i)
@@ -983,6 +1014,37 @@ createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=
 }
 
 
+RLEPlot <- function(x, lab=NULL, weight=NULL, main="RLE Plot", image.width=1600, image.height=1200, y.lim=NULL) {
+
+  ## 2 situations, either an MAlist or a matrix:
+  switch(class(x), "matrix" = {
+    reference <- rowMedians(x, na.rm=TRUE)   
+    rle <- sweep(x, 1, reference, "-")
+    rle.col <- NULL
+  }, "MAList" = {
+    y <- RG.MA(x)
+    red <- log(y$R,2)
+    green <- log(y$G,2)
+    ref.red   <- rowMedians(red, na.rm=TRUE)
+    ref.green <- rowMedians(green, na.rm=TRUE)
+    red.rle  <- sweep(red, 1, ref.red, "-")
+    green.rle <- sweep(green, 1, ref.green, "-")
+    rle <- cbind(red.rle, green.rle)
+    rle.col <- c( rep("red", dim(red)[2]), rep("green", dim(green)[2] ) )
+    colnames(rle) <- c( paste( rep(c("red", "green"), each=dim(red)[2]), rep(colnames(green), 2)))
+  })
+
+  if(is.null(y.lim)) {  y.lim <- c( min(rle, na.rm=TRUE), max(rle, na.rm=TRUE) ) }
+  boxplot(rle, pch=".", las=2, cex.axis=0.7, col=rle.col, main=main, ylim=y.lim)
+  abline(h=0, lwd=1, lty=1, col="darkgrey")
+  switch(class(x), "MAList" = {
+    abline(v=dim(red)[2]+0.5, lwd=1, lty=2, col="black")
+    text(0.2, max(y.lim) - 0.2, pos=4, labels="Red Channel", col="darkred", cex=0.8)
+    text(dim(green)[2] + 0.5, max(y.lim) - 0.2, pos=4, labels="Green Channel", col="darkgreen", cex=0.8)
+  })
+
+
+}
 
 ###########################################
 ##     END OF CREATEQCPLOTS SCRIPT       ##

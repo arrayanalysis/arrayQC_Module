@@ -140,7 +140,7 @@ GenerateHeaderFile <- function(xpath = NULL, fileName = "columnHeaders.arrayQC",
      x[,1] <- c("F532 Mean", "B532 Mean", "F532 Median", "", "B532 SD", 
                 "F532 % Sat.", "", "", "", "F635 Mean", "B635 Mean", 
                 "F635 Median", "", "B635 SD", "F635 % Sat.", "", "" ,"", "", 
-                "RefNumber", "", "Row", "Column", "ID" , "ControlType",
+                "RefNumber", "Block", "Row", "Column", "ID" , "ControlType",
                 "Name", "Description", "GeneName", "Flags")                      
   }, "agilent" = {
     x[,1] <- c("gMeanSignal","gBGUsed","gMedianSignal","gBGMedianSignal","","","gNumPix","gIsSaturated",
@@ -294,7 +294,7 @@ parseHeaderFile <- function(xpath=NULL, fileName="columnHeaders.arrayQC", dataty
   return(y)
 }
 
-ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL, columns=NULL, other=NULL, annotation=NULL, blocks=NULL, source=NULL, use.description=FALSE, save.backup=TRUE, manual.flags=NULL, debug.parameter=FALSE, controlType.value=NULL, arrayQC.path="http://svn.bigcat.unimaas.nl/r-packages/arrayQC/dev/", max.characters=20 ) {
+ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL, columns=NULL, other=NULL, annotation=NULL, blocks=NULL, source=NULL, use.description=FALSE, save.backup=TRUE, manual.flags=NULL, controlType.value=NULL, arrayQC.path="http://svn.bigcat.unimaas.nl/r-packages/arrayQC/dev/", max.characters=20, debug.parameter=FALSE ) {
 #-- To add for "generic" support:
 #   number of lines to skip prior to reading in the files!
   error <- NULL
@@ -316,7 +316,8 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
     cat(" description.file <- experimentalDescr\n spottypes.file <- spotfile\n data.path <- datapath\n")
     cat(" columns <- columns\n other <- other.columns\n annotation <- annotation\n blocks <- NULL\n")
     cat(" source <- package\n use.description <- TRUE\n save.backup <- TRUE\n manual.flags <- useAsManualFlags\n")
-    cat(" controlType.value <- controlType.value\narrayQC.path <- arrayQC.scriptpath")
+    cat(" controlType.value <- controlType.value\narrayQC.path <- arrayQC.scriptpath\n")
+    cat(paste( "max.characters <-", max.characters, "\n"))
     stop("[/StartDebug]\n----")
   }
 
@@ -383,7 +384,7 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
   a <- nchar(targets$Description)
   b <- a[] > max.characters
   if( sum(b, na.rm=TRUE) > 0 ) {
-    cat("    * The following description names were too long and were trimmed:\n")
+    cat("\n    * The following description names were too long and were trimmed:\n")
     zzz <- targets$Description[b]
     for(k in 1:length(zzz)) {
       cat(paste("      ->", zzz[k], " -->"))
@@ -430,7 +431,7 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
   #check whether all columns to be included, are present in the (first) data file
   #make use of the fact that, if not found, read.maimages will just not include it in the object returned
   #change to errors stopping the code later (after debugging that no incorrect calls are made)
-  cat(" * Checking column names (reading first file for verification)... ")
+  cat("\n * Checking column names (reading first file for verification)... ")
 
   ## 13/12/2010
   ## Extraction Version number of R to use the proper function parameters (i.e. channels or green.only)
@@ -479,58 +480,71 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
   } else {
     xxx <- which(temp2[,1] == max(temp2[,1], na.rm=TRUE))
     if(length(xxx)!=1) { stop("\n   [[ERROR]]\n No specific / multiple rows could be associated with the given column names!\n") }
-    cat(paste("\n   [[ERROR]]\n  ReadFiles() was able to match ", max(temp2[,1], na.rm=TRUE), " given column names. The following column names were NOT found:\n"))
-    check.required <- 1
+    cat(paste("\n   [[ERROR]]\n  ReadFiles() was unable to match ", length(required.columns) - max(temp2[,1], na.rm=TRUE), " given column names. These were:\n"))
+#    check.required <- 1
+
+    required.full <- cbind(required.colnames, required.columns)
+    rownames(required.full) <- apply( as.matrix(required.colnames), 1, function(x) { strsplit( x, "$", fixed=TRUE)[[1]][2] })
+
 ## Check which row contains this value
     header.row <- which(temp2[,2] == max(temp2[,2]))
     mispos <- temp2[header.row,2:dim(temp2)[2]]
-##### FUTURE UPDATE
-## Need to implment a check here that looks for all 'optional' values. (grab them with .checkColumns). Then check if all missing values are optional, then proceed.
-## ALso need to include that the objects themselves should be altered. If optional and not present, it should be removed from the object in general.
-    reqCols <- .checkColumns(functionName="annotation", silent=TRUE, local.path=data.path, scriptpath=arrayQC.path)[["required"]]
-    missing.col <- required.columns[mispos[]==0]
-    missing.colname <- required.colnames[mispos[]==0]
-    reqValue <- missing.col %in% reqCols
-    ## If all values in reqValue are FALSE, then just proceed with the QC procedure
+## 1) required column names (arrayQC internal variables) are extracted from the requiredColumns.arrayQC file.
+## 2) For each subpart, we will check if the corresponding values in mispos are equal to 1. If this is not the case: error.
+##    Else: continue, but remove the fields from the object prior to reading in the files.
+
+    reqCols <- list()
+    if(present == 20) { reqCols[["raw"]] <- .checkColumns(functionName="green", silent=TRUE, local.path=data.path, scriptpath=arrayQC.path)[["required"]] }
+    if(present == 22) { reqCols[["raw"]] <- .checkColumns(functionName="red", silent=TRUE, local.path=data.path, scriptpath=arrayQC.path)[["required"]] }
+    if(present == 2)  { reqCols[["raw"]] <- .checkColumns(functionName="both", silent=TRUE, local.path=data.path, scriptpath=arrayQC.path)[["required"]] }
+    reqCols[["annotation"]] <- .checkColumns(functionName="annotation", silent=TRUE, local.path=data.path, scriptpath=arrayQC.path)[["required"]] 
+    missing <- required.full[mispos[]==0,]
+    reqValue <- (rownames(missing) %in% reqCols[["raw"]]) + (rownames(missing) %in% reqCols[["annotation"]])
+
+    colnames(missing) <- c("internal arrayQC field", "User Defined Value")
+    ## If all values in reqValue are FALSE, then just proceed with the QC procedure.
+    ## However, the values will be set to blank so these values will not be read in.
     if(sum(reqValue) == 0) { 
-      cat(paste("*", missing.colname, ":", missing.col, "\n"))
-      annotation[[missing.col]] <- NULL  ## Possible fix!
-      check.required <- 0
+      print(missing)
+      ## Often the missing columns will be in 'other' or 'annotation'.
+      ## Remove the unmatching column names from the objects
+      temp <- as.matrix(unlist(annotation))
+      annotation <- as.list( temp[!rownames(temp) %in% rownames(missing),])
+      temp <- as.matrix(unlist(other))
+      other <- as.list( temp[!rownames(temp) %in% rownames(missing),])
+
       cat("  --> These columns were all identified as NON-ESSENTIAL and as such arrayQC will continue to read through the files...\n")
+      Sys.sleep(5)
+    } else {
+      cat(" --> The following columns are REQUIRED for arrayQC to run and were NOT matched to an existing column name. Please edit the columnHeaders file and try again!\n")
+      print( missing[ reqValue[] > 0, ] )
+      Sys.sleep(5)
+      cat("\n\n The following column names were found in your data file:")
+      temp <- strsplit(file1[xxx], "\t")[[1]]
+      if( length(temp) %% 3 == 1 ) { temp <- c(temp, NA, NA) }
+      if( length(temp) %% 3 == 2 ) { temp <- c(temp, NA) }
+      temp.matrix <- as.data.frame(matrix(data=gsub("\"", "", temp), ncol=3, nrow= ceiling(length(temp) / 3), byrow=TRUE))
+      print(temp.matrix)
+      Sys.sleep(5)
+      rm(temp.matrix)
+      stop("\n [ ReadFiles() terminated ]\n")
     }
-    if(check.required == 1) {
-      if(xxx == 0) {
-        cat(paste(" *", missing.colname, ":", required.columns, "\n"))
-      } else {
-        cat(paste(" *", missing.colname, ":", required.columns[!temp2[xxx,2:dim(temp2)[2]]], "\n"))
-        Sys.sleep(5)
-        temp <- strsplit(file1[xxx],"\t")[[1]]
-  #      temp <- paste("*", temp)
-    ## Have to fix this later, but the problem is that while creating a matrix and there are a surplus of columns, the data starts
-    ## to repeat itself. Creating an empty matrix and filling it up row by row.
-  #      temp <- matrix(data=temp, ncol=4, nrow=ceiling(length(temp)/4), byrow=TRUE)
-  #     mat1 <- matrix(data="", ncol=4, nrow=ceiling(length(temp)/4))
-  #     if(ceiling(length(temp)/4) == length(temp)/4) {
-  #       temp <- matrix(data=temp, ncol=4, nrow=ceiling(length(temp)/4), byrow=TRUE)
-  #     } else {
-  #       for(i in 1:ceiling(length(temp)/4)) {
-  #         start.pos <- (4*(i-1))+1
-  #         end.pos <- 4*i
-  #         if(i == ceiling(length(temp)/4)) {
-  #           remaining <- length(temp) - (4 * (i-1))
-  #           mat1[1:remaining,i] <- temp[ start.pos : (start.pos + remaining)]
-  #         } else {
-  #           mat1[1:4,i] <- temp[ start.pos : end.pos ]        
-  #         }
-  #       }
-  #    }
-  
-        cat("\n\n   [[INFO]]\nThe following column names were found (and can be chosen):\n")
-        cat(paste(" *", temp, "\n", sep=""))
-        rm(temp, temp2)
-        stop("ReadFiles stopped due to unmatching column names!")
-      }
-    }
+
+
+
+#    if(check.required == 1) {
+#      if(xxx == 0) {
+#        cat(paste(" *", missing.colname, ":", required.columns, "\n"))
+#      } else {
+#        cat(paste(" *", missing.colname, ":", required.columns[!temp2[xxx,2:dim(temp2)[2]]], "\n"))
+#        Sys.sleep(5)
+#        temp <- strsplit(file1[xxx],"\t")[[1]]
+#         cat("\n\n   [[INFO]]\nThe following column names were found (and can be chosen):\n")
+#        cat(paste(" *", temp, "\n", sep=""))
+#        rm(temp, temp2)
+#        stop("ReadFiles stopped due to unmatching column names!")
+#      }
+#    }
   }
   cat(" * Reading microarray text files ...\n");
   if(subver > 10 || majorVer >= 3) {

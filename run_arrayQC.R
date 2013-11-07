@@ -268,11 +268,13 @@ if(plotVirtualImages == 1) {
     }
   } else {
     temp <- names(MA2)
+    ## In these cases the values are not M/A values, but normalized signals, so symm is set to FALSE
     for(i in 1:length(MA2)) {
       if(temp[i] == "LOESS") {
-        imageplot3by2Adp(MA[["LOESS"]], MA2[[i]], paste(temp[i],"_EstimatedSignal", sep=""), high="blue", low="yellow", symm=TRUE)
+
+        imageplot3by2Adp(MA[["LOESS"]], MA2[[i]], paste(temp[i],"_EstimatedSignal", sep=""), high="blue", low="yellow", symm=FALSE)
       } else {
-        imageplot3by2Adp(MA[["BGCORRECTED"]], MA2[[i]], paste(temp[i],"_EstimatedSignal", sep=""), high="blue", low="yellow", symm=TRUE)
+        imageplot3by2Adp(MA[["BGCORRECTED"]], MA2[[i]], paste(temp[i],"_EstimatedSignal", sep=""), high="blue", low="yellow", symm=FALSE)
       }
     }
     rm(temp)
@@ -305,9 +307,6 @@ if(plotClust == 1) {
   cat("*------------\n| Clustering\n*------------\n")
   ## Cluster plots - by default: cluster.distance="euclidean", cluster.method="ward". Can be changed by other methods available in ?hdist and ?hclust
   if(RG$datatype=="both") {
-
-
-
     for(i in 1:length(MA)) {
       switch(names(MA)[i], "RAW" = { ######### NEED TO CHECK IF THIS IS STILL VALID!!!
          addTitle <- "RAW Data"
@@ -420,15 +419,15 @@ normMethods[,3] <- c("BGCORRECTED", "LOESS", "LOESS.QUANTILE", "LOESS.AQUANTILE"
 if( is.na(normMethods[normMethod, datatype])) { cat("Cannot save preferred object information (NA)\n") } else {
   if(datatype == "two-channel") {
     print(1)
-    SaveData(MA[[ normMethods[normMethod,datatype] ]], save.RG=FALSE, save.MA=TRUE, save.QC=TRUE, detailed.QC=TRUE, raw=RG)
+    a <- SaveData(MA[[ normMethods[normMethod,datatype] ]], save.RG=FALSE, save.MA=TRUE, save.QC=TRUE, detailed.QC=TRUE, raw=RG, store.output=TRUE)
   } else {
     print(2)
     if( normMethod == "loess" ) {
 print(2.1)
-      SaveData(MA[[ normMethods[normMethod,datatype] ]], save.RG=FALSE, save.MA=TRUE, save.QC=TRUE, detailed.QC=TRUE, raw=RG)
+      a <- SaveData(MA[[ normMethods[normMethod,datatype] ]], save.RG=FALSE, save.MA=TRUE, save.QC=TRUE, detailed.QC=TRUE, raw=RG, store.output=TRUE)
     } else {
 print(2.2)
-      SaveData(MA2[[ normMethods[normMethod,datatype] ]], save.RG=FALSE, save.MA=TRUE, save.QC=TRUE, detailed.QC=TRUE, raw=RG)
+      a <- SaveData(MA2[[ normMethods[normMethod,datatype] ]], save.RG=FALSE, save.MA=TRUE, save.QC=TRUE, detailed.QC=TRUE, raw=RG, store.output=TRUE)
     }
   }
 }
