@@ -1,7 +1,7 @@
 ## requiredColumns.arrayQC
 #
 # This file contains for specific arrayQC functions information about the (minimum) required columns
-# for a function to work. Optional columns are denoted between <<>>
+# for a function to work. Optional column names are stored between double brackets, whereas required columns are not.
 # The setup is set as follows:
 # [FUNCTION]\t[REQUIRED VARIABLE NAME 1] [REQUIRED VARIABLE NAME 2] <<OPTIONAL VARIABLE NAME 1>>
 # 
@@ -23,7 +23,7 @@ HierarchCluster
 imageplot3by2Adp	
 naZeroWeights	
 PlotDensities	
-annotation	[[GeneName]]	[[FeatureNum]]	Row	Col	ProbeName
+annotation	[[Block]]	[[GeneName]]	[[FeatureNum]]	Row	Col	ProbeName
 green	G	Gb
 red	R	Rb
 both	G	Gb	R	Rb

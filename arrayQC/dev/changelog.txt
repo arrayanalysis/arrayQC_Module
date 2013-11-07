@@ -1,3 +1,35 @@
+## v1.3.2
+# Aug - Dec 2013 (Stan)
+# - Since the maximum allowed characters per description is set to 20, the margins of certain images have been retweaked to better fit the images.
+# - Fixed a few minor text output bugs in boxplotOverview() and ReadFiles()
+# - createMAPlots()
+#   -- Added y.symm parameter (default: off) to forces Y-axis to be centered around 0 if needed (i.e. for M values))
+#   -- Added two LOESS curves (red: calculated curve; blue: estimated values)
+# - boxplotOverview():
+#   -- Fixed minor text bugs
+#   -- abline() is drawn based on the average and median value of the dataset; for M-values an additional h=0 line is drawn for reference.
+#   -- For y.axis="M" the data object is altered in such a way that outliers that exceed y.lim[1] or y.lim[2] are automatically reduced to these
+#      values.
+# - imageplot3by2Adp()
+#   -- Added base.number to provide a scaling means of the width and height of the given image. Default value: 12. This value is coupled
+#      to an internal max.dimension parameter, which is explained further below.
+#   -- Images are now scaled to either max.dimensions pixels in either width or length (dependant on the array orientation). This is actually 
+#      a very effective solution to the color legends that are displayed in (sometomes) odd locations. Fixed locations now! Only need
+#      to test this out on 60K arrays. The value of max.dimensions corresponds to 200 times the base.number to ensure that if people raise/lower
+#      the base number the reference width/height also changes.
+#   -- For visualizing estimated signals for single channel data the main script has been adjusted to symm=FALSE (was TRUE before)
+# - SaveData()
+#   -- Fixed issue where normalized data was not stored in object.
+# - ReadFiles()
+#   -- Redesigned the part where missing column names were not handled properly. The current procedure is: if a user supplies a 
+#      wrong column name, which is deemed non-essential, then arrayQC will mention this to the user, but will set the values
+#      to blank before reading in the file. If the user supplies an incorrect REQUIRED column name, the script will stop!
+# - RLEPlot()
+#   -- New function, similar to Affymetrix RLE. The Relative Log Expression of each reporter against the median expression of the
+#      reporters across all arrays is calculated and plotted in a boxplot. The function requires a list of matrices (logged intensities) 
+#      or MALists Input has to be a list of either matrices or MAList, which for the latter is reverted back
+#      to individual R/G values. Still needs to be fleshened out and implemented in the large script.
+
 ## v1.3.1
 # Jan - Mar 2013 (Stan)
 # Changes below were made to support web module:
