@@ -243,11 +243,18 @@ imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.tra
 
   ## If the image width gets bigger than 720 px, then rescale the whole image to this maximum width. This to ensure that the legend plotted is done correctly.
    if(dimensions[2] > dimensions[1]) { ## Width > height --> landscape
+#     print("1")
      dimensions[1] <- dimensions[1] / dimensions[2] * max.dimensions
      dimensions[2] <- max.dimensions
    } else {
-     dimensions[1] <- max.dimensions
+#     print("2")
      dimensions[2] <- dimensions[2] / dimensions[1] * max.dimensions
+     dimensions[1] <- max.dimensions
+   }
+   ## For the newer generation arrays the width is 6-7 larger than the height. I would like to have at least a minimum height of the images of 800 to display the image properly.
+   if(dimensions[1] < 1000) {
+     dimensions[2] <- dimensions[2] / dimensions[1] * 1000
+     dimensions[1] <- 1000
    }
   for (ipage in 1:npages) {
     i1 <- ipage * 6 - 5
@@ -298,6 +305,9 @@ imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.tra
       } else {
         pos.x <- c(0.96, 0.965)  #0.91, 0.93 ## 0.95, 0.96
         pos.y <- c(0.02, 0.94)
+        if(dimensions[2] >= 5000) {
+          pos.x <- c(0.985, 0.99)
+        }
       }
       if(binary) {
         colors2use <- ColorFunction(2)

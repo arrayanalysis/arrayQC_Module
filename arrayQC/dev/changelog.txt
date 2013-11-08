@@ -1,5 +1,6 @@
 ## v1.3.2
 # Aug - Dec 2013 (Stan)
+# - Fixed issue with single channel arrays. RG2 object in run_arrayQC.R  was of class "ElistRaw" whereas it had to be "RGList".
 # - Since the maximum allowed characters per description is set to 20, the margins of certain images have been retweaked to better fit the images.
 # - Fixed a few minor text output bugs in boxplotOverview() and ReadFiles()
 # - createMAPlots()
@@ -18,6 +19,7 @@
 #      to test this out on 60K arrays. The value of max.dimensions corresponds to 200 times the base.number to ensure that if people raise/lower
 #      the base number the reference width/height also changes.
 #   -- For visualizing estimated signals for single channel data the main script has been adjusted to symm=FALSE (was TRUE before)
+#   -- Fixed issue when re-scaling gave an image with a height < 1000. If this is the case, the image is rescaled once again to fit this need.
 # - SaveData()
 #   -- Fixed issue where normalized data was not stored in object.
 # - ReadFiles()

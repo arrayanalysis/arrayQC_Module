@@ -216,6 +216,7 @@ if(RG$datatype == "both") {
 } else {
   ## normalizeWithinArrays does NOT support EListRaw objects, as such we have to make use of RG2
   RG2 <- RG
+  class(RG2) <- "RGList"
   RG2$R <- RG2$G <- RG2$E
   RG2$Rb <- RG2$Gb <- RG2$Eb
   switch(datatype, "red" = {
