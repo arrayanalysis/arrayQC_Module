@@ -314,7 +314,7 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
   if(debug.parameter==1) {
     cat("Paste the following in your R session window to debug the current function:\n")
     cat(" description.file <- experimentalDescr\n spottypes.file <- spotfile\n data.path <- datapath\n")
-    cat(" columns <- columns\n other <- other.columns\n annotation <- annotation\n blocks <- NULL\n")
+    cat(" columns <- columns\n other <- other.columns\n annotation <- annotation\n blocks <- blocks\n")
     cat(" source <- package\n use.description <- TRUE\n save.backup <- TRUE\n manual.flags <- useAsManualFlags\n")
     cat(" controlType.value <- controlType.value\narrayQC.path <- arrayQC.scriptpath\n")
     cat(paste( "max.characters <-", max.characters, "\n"))
@@ -499,9 +499,15 @@ ReadFiles <- function(description.file=NULL, spottypes.file=NULL, data.path=NULL
     if(present == 2)  { reqCols[["raw"]] <- .checkColumns(functionName="both", silent=TRUE, local.path=data.path, scriptpath=arrayQC.path)[["required"]] }
     reqCols[["annotation"]] <- .checkColumns(functionName="annotation", silent=TRUE, local.path=data.path, scriptpath=arrayQC.path)[["required"]] 
     missing <- required.full[mispos[]==0,]
+    if(is.vector(missing)) { 
+      ## Stupid vectors. Makes us lose the rownames, so we have to force this into a matrix and retrieve the proper rowname again!
+      missing <- t(as.matrix(missing))
+      rownames(missing) <- rownames(required.full)[mispos[]==0]
+    }
+    colnames(missing) <- c("internal arrayQC field", "User Defined Value")
+
     reqValue <- (rownames(missing) %in% reqCols[["raw"]]) + (rownames(missing) %in% reqCols[["annotation"]])
 
-    colnames(missing) <- c("internal arrayQC field", "User Defined Value")
     ## If all values in reqValue are FALSE, then just proceed with the QC procedure.
     ## However, the values will be set to blank so these values will not be read in.
     if(sum(reqValue) == 0) { 
