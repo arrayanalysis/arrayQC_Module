@@ -1,5 +1,7 @@
 ## v1.3.2
 # Aug - Dec 2013 (Stan)
+# - 11/11/2013 - Fixed issue with 'missing' variable in ReadFiles(): when only one column name was missing in the file it turned into a vector and not the expected matrix. This
+#                object is now forced to be a matrix.
 # - Fixed issue with single channel arrays. RG2 object in run_arrayQC.R  was of class "ElistRaw" whereas it had to be "RGList".
 # - Since the maximum allowed characters per description is set to 20, the margins of certain images have been retweaked to better fit the images.
 # - Fixed a few minor text output bugs in boxplotOverview() and ReadFiles()
