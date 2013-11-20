@@ -53,6 +53,7 @@ controlType.value <- NULL
   plotPCA <- TRUE  ## Should we generate a PCA plot?
   plotCor <- TRUE  ## Should we generate a Correlation Plot?
   plotMvA <- TRUE  ## Should we generate an MvA plot?
+  loesscurve <- TRUE ## Should we plot loess curve(s) in the MvA plot?
   plotDensity <- TRUE  ## Should we generate a density plot?
   ## Which normMethod do you choose in the end? Options are "bgcorrected", "loess", "quantile", "aquantile", "scaled"
   if(datatype == "two-channel") {  normMethod <- "loess" } else { normMethod <- "quantile" } 

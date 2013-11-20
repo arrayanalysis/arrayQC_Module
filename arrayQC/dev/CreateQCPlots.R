@@ -282,7 +282,8 @@ imageplot3by2Adp <- function (data.object, which.field, name, high, low, log.tra
         }
       }
   
-      limit <- 0.05
+      limit <- 0.05 
+      ## if symm is false, take the 5% and 95% values of the distribution field and plot these.
       if(symm) {
         zlim=c(-max(abs(quantile(plot.field[,i], c(limit,1-limit), na.rm=TRUE))),max(abs(quantile(plot.field[,i], c(limit,1-limit), na.rm=TRUE))))
       } else {
@@ -942,6 +943,7 @@ createMAplots <- function(x, lab=NULL, weight = NULL, postfix=NULL, image.width=
       x[[selected]] <- NULL
     }
   }
+
 
   ## Check if labels exist
   if(is.null(lab)) { lab <- names(x) }
