@@ -265,7 +265,7 @@ if(plotVirtualImages == 1) {
   if(RG$datatype == "both") {
     for(i in 1:length(MA)) {
       imageplot3by2Adp(MA[[i]], MA[[i]]$M, paste(names(MA)[i],"_LogRatio", sep=""), high="blue", low="yellow", symm=TRUE)
-      imageplot3by2Adp(MA[[i]], MA[[i]]$A, paste(names(MA)[i],"_AverageIntensity", sep=""), high="blue", low="yellow", symm=TRUE)
+      imageplot3by2Adp(MA[[i]], MA[[i]]$A, paste(names(MA)[i],"_AverageIntensity", sep=""), high="blue", low="yellow", symm=FALSE)
     }
   } else {
     temp <- names(MA2)
@@ -396,7 +396,7 @@ if(plotDensity == 1) {
 
 if(plotMvA == 1) {
   cat("*------------\n| MvA plots\n*------------\n")
-  createMAplots(MA, weight=MA[["BGCORRECTED"]]$weights) ## For single-channel arrays no MA plots can be made for quantile and scaled normalization, because this was based on intensities.
+  createMAplots(MA, weight=MA[["BGCORRECTED"]]$weights, loess.curve=loess.curve) ## For single-channel arrays no MA plots can be made for quantile and scaled normalization, because this was based on intensities.
 }
 
 if(plotBoxplot == 1) {

@@ -118,7 +118,7 @@ QualityControl <- function (x=NULL, num.pix=NULL, low.pix=TRUE, mean.vs.median=T
   
   #create weights.analysis field for possible later use, copy structure from weights field and overwrite with NAs
   x$other$weights.analysis <- x$weights
-  x$other$weights.analysis[] <- NA
+#  x$other$weights.analysis[] <- NA
   
   return(x)
   }

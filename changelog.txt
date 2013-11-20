@@ -1,5 +1,7 @@
 ## v1.3.2
 # Aug - Dec 2013 (Stan)
+# - 20/11/2013 - Added loess.curve parameter to MvA plot. When set to TRUE (default) the loess lines are plotted (note: for some datasets this may take some time!)
+#              - fixed typo in weights --> virtual images using arrayQC weights will now also be plotted!
 # - 11/11/2013 - Fixed issue with 'missing' variable in ReadFiles(): when only one column name was missing in the file it turned into a vector and not the expected matrix. This
 #                object is now forced to be a matrix.
 # - Fixed issue with single channel arrays. RG2 object in run_arrayQC.R  was of class "ElistRaw" whereas it had to be "RGList".
